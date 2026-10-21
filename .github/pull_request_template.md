@@ -1,3 +1,8 @@
+## Tipo
+- [ ] Normal (`feature/`, `fix/`, `docs/`, `chore/`) → va a `staging`
+- [ ] **Hotfix** (`hotfix/`, urgente) → sale de `main` y va a `main`; después hay que sincronizar `staging`
+- [ ] Publicación (`staging` → `main`)
+
 ## Qué cambia
 <!-- Una o dos frases. -->
 

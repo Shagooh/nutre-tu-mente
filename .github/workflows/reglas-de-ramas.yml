@@ -1,0 +1,28 @@
+name: Reglas de ramas
+
+# Valida el nombre de la rama y hacia dónde puede ir cada Pull Request.
+# Convención y flujo: docs/FLUJO-DE-RAMAS.md
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+    branches: [main, staging]
+
+permissions:
+  contents: read
+
+jobs:
+  ramas:
+    name: 0 · Reglas de ramas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # historial completo para comprobar que un hotfix salga de main
+      - name: Validar la rama
+        # Los nombres de rama los escribe cada persona: se pasan por entorno, nunca dentro del script.
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash .github/scripts/validar-ramas.sh
