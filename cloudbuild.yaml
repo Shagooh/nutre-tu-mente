@@ -1,16 +1,18 @@
 # CI/CD de Google (Cloud Build). Convive con GitHub Actions.
 #
-# Qué hace en cada push (según la rama que dispare el trigger):
+# Qué hace (el destino lo decide la sustitución _ENTORNO del trigger):
 #   1. Instala dependencias y ejecuta las pruebas.
 #   2. Compila la versión web.
 #   3. Publica a Firebase:
-#        main    → producción: Hosting (live) + reglas e índices de Firestore
-#        staging → canal de pruebas "staging" de Hosting (caduca a los 30 días)
+#        _ENTORNO=produccion → Hosting (live) + reglas e índices de Firestore
+#        _ENTORNO=staging    → canal de pruebas "staging" de Hosting (caduca a los 30 días)
+# Se usa con un trigger por entorno (push a main -> staging; manual -> produccion).
 #
 # Se usa la cuenta de servicio de Cloud Build, así que NO hay claves en el repositorio.
 # Configuración (una sola vez): ver docs/CONFIGURAR-FIREBASE.md → "Cloud Build".
 
 substitutions:
+  _ENTORNO: staging              # staging | produccion
   _FIREBASE_PROJECT: ''          # id del proyecto, ej. nutre-tu-mente-staging
   _FIREBASE_API_KEY: ''
   _FIREBASE_AUTH_DOMAIN: ''
@@ -52,7 +54,7 @@ steps:
         if [ -z "${_FIREBASE_PROJECT}" ]; then
           echo "Falta la sustitución _FIREBASE_PROJECT: no se publica."; exit 1
         fi
-        if [ "${BRANCH_NAME}" = "main" ]; then
+        if [ "${_ENTORNO}" = "produccion" ]; then
           npx --yes firebase-tools@14 deploy --only hosting,firestore:rules,firestore:indexes \
             --project "${_FIREBASE_PROJECT}" --non-interactive
         else

@@ -39,11 +39,13 @@ explícito del **equipo clínico** y de las **dos personas de desarrollo**, y se
 
 14. **Todo requisito es verificable.** Cada requisito tiene *Scenario* (WHEN/THEN) escritos de forma que se puedan
     comprobar. Lo que se puede automatizar, se prueba con tests.
-15. **La pipeline en verde es el criterio de "terminado".** No se une nada a `staging` ni a `main` con `1 · Probar` o
+15. **La pipeline en verde es el criterio de "terminado".** No se une nada a `main` con `1 · Probar` o
     `2 · Compilar` fallando.
 16. **Cambios a producción siempre con revisión humana.** `main` solo recibe cambios por Pull Request y la publicación a
-    `Production` requiere aprobación manual.
-17. **Dos entornos que nunca se mezclan:** `staging` usa el proyecto Firebase de pruebas y `main` el de producción.
+    `Production` requiere aprobación manual. Un hotfix parte siempre de **lo que está en producción** (la última etiqueta
+    `prod/…`), no de `main`.
+17. **Dos entornos que nunca se mezclan:** el entorno `staging` usa el proyecto Firebase de pruebas y `Production` el de
+    producción. Ambos se publican desde `main`; el destino se elige en la pipeline.
 18. **Mantener lo simple.** Antes de añadir una dependencia o un servicio, se justifica en el plan. No se construye lo que el
     Lean Canvas marca como "puede esperar" sin una especificación que lo apruebe.
 19. **Accesible y para móvil.** La app es móvil (Android e iOS). Toda pantalla nueva debe verse y usarse bien en un teléfono,

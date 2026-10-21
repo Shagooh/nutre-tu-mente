@@ -1,105 +1,136 @@
-# Flujo de ramas
+# Flujo de ramas y publicación
 
-Dos ramas **permanentes** y varias ramas **cortas** de trabajo, con el tipo indicado en el nombre.
+**Una sola rama permanente: `main`.** Todo el trabajo sale de `main` y vuelve a `main` por Pull Request. Lo que cambia entre
+"probar" y "publicar" no es la rama, sino **el destino que se elige al publicar**.
 
-| Rama | Qué es | Se publica en |
-|---|---|---|
-| `main` | Lo que usan las personas | **Producción** (con aprobación manual en el entorno `Production`) |
-| `staging` | Lo que se está probando antes de salir | Entorno de pruebas |
+```
+feature/x ──PR──▶ main ──(automático)──▶ staging        probar
+                    │
+                    └──(manual, con aprobación)──▶ producción
 
-## Convención de nombres
+hotfix/x  ──PR──▶ main
+(sale de lo que    └──(manual, con aprobación, desde la propia rama hotfix)──▶ producción
+ está en producción)
+```
 
-`tipo/nombre-en-minusculas-con-guiones`
+## Las ramas
 
-| Prefijo | Para qué | Sale de | Va a |
+| Rama | Para qué | Sale de | Va a |
 |---|---|---|---|
-| `feature/` | Funcionalidad nueva o cambio de comportamiento | `staging` | `staging` |
-| `fix/` | Arreglo normal (no urgente) | `staging` | `staging` |
-| `docs/` | Solo documentación | `staging` | `staging` |
-| `chore/` | Mantenimiento: dependencias, pipeline, configuración | `staging` | `staging` |
-| **`hotfix/`** | **Arreglo urgente que no puede esperar** | **`main`** | **`main`** (directo) |
+| **`main`** | Única rama permanente. La fuente de todo | — | — |
+| `feature/…` | Trabajo normal: funcionalidades, arreglos, documentación, mantenimiento | `main` | `main` (Pull Request) |
+| `hotfix/…` | Arreglo urgente que no puede esperar | **la última versión publicada en producción** | `main` (Pull Request) |
 
-Ejemplos: `feature/recordatorios-pausables` · `fix/error-al-guardar-checkin` · `chore/actualizar-expo` ·
-`hotfix/boton-me-esta-costando-no-abre`.
-Solo letras minúsculas, números, `.`, `_` y `-`. Sin espacios, sin mayúsculas, sin acentos.
+No existen otras ramas (ni `staging`, ni `fix/`, `docs/`, `chore/`). Nombres: `feature/recordatorios-pausables`,
+`hotfix/boton-me-esta-costando-no-abre`. Solo minúsculas, números, `.`, `_` y `-`.
+
+## Dónde se publica
+
+| Cuándo | Qué ocurre |
+|---|---|
+| Se une un Pull Request a `main` | Se prueba, se compila y se **publica solo en `staging`** |
+| Una persona lo pide a mano | **Actions → Pipeline → Run workflow:** eliges la **rama** y el **entorno** (`staging` o `produccion`) |
+
+Combinaciones permitidas al publicar a mano:
+
+| Rama elegida | `staging` | `produccion` |
+|---|---|---|
+| `main` | ✅ | ✅ (con aprobación) |
+| `hotfix/…` | ✅ | ✅ (con aprobación y si parte de producción) |
+| `feature/…` u otra | ❌ | ❌ |
+
+**Producción siempre exige la aprobación** de una persona en el entorno `Production`.
+
+## Qué hay en producción: las etiquetas `prod/…`
+
+Como `main` puede tener cambios todavía sin publicar, producción **no siempre es lo último de `main`**. Por eso, cada vez que
+se publica a producción la pipeline crea una etiqueta de git `prod/AAAA-MM-DD-HHMMSS` sobre la versión publicada.
+
+```bash
+git fetch origin --tags
+git tag -l 'prod/*' --sort=-creatordate | head -1     # la que está hoy en producción
+git log --oneline prod/<etiqueta>..origin/main        # lo que main tiene y producción todavía no
+```
+
+Esa etiqueta es la referencia de la que **debe salir cualquier hotfix**.
 
 ## Camino normal
 
-```
-feature/x ──PR──▶ staging ──PR──▶ main
-                  (se prueba)     (producción, con aprobación)
-```
-
-1. Crea la rama desde **`staging`** actualizada: `git checkout staging && git pull && git checkout -b feature/x`.
-2. Pull Request **hacia `staging`**. La pipeline prueba y compila; la otra persona revisa.
-3. Cuando lo de `staging` esté probado, Pull Request **de `staging` hacia `main`**.
-4. En producción, la pipeline queda **esperando tu aprobación** antes de publicar.
+1. `git switch main && git pull && git switch -c feature/nombre`
+2. Pull Request **hacia `main`**. La pipeline prueba y compila; la otra persona revisa.
+3. Al unirlo, **staging se actualiza solo**. Se prueba ahí.
+4. Cuando se quiera publicar: **Run workflow → rama `main` → entorno `produccion`**, y aprobar. El resumen de la ejecución lista
+   **qué commits se van a publicar** (los que hay desde la etiqueta actual).
 
 ## Camino rápido: `hotfix/`
 
-```
-hotfix/x ──PR──▶ main        (luego)  main ──▶ staging
-(sale de main)   (producción)          (sincronizar)
-```
+**Úsalo solo** si lo que está en producción hace daño o no funciona: una pantalla clave no abre, se guarda algo que no
+debería, un texto clínico es incorrecto o se publicó con una configuración equivocada. **No** por prisa con una funcionalidad.
 
-**Úsalo solo** si lo que está en producción hace daño o no funciona, por ejemplo:
-- una pantalla clave no abre o la app se cierra (ej. el botón "Me está costando");
-- se guarda algo que no debería guardarse, o se expone información de alguien;
-- un texto clínico es incorrecto o puede hacer daño;
-- se publicó con una configuración equivocada.
-
-**No** lo uses por prisa con una funcionalidad. Eso va por el camino normal.
-
-Pasos:
-
-1. Crea la rama **desde `main`**, no desde `staging`:
+1. **Crea la rama desde producción, no desde `main`:**
    ```bash
-   git fetch origin
-   git checkout -b hotfix/nombre-corto origin/main
+   bash scripts/crear-hotfix.sh nombre-corto
    ```
-2. Haz **solo el arreglo**, lo mínimo, con su prueba si es posible.
-3. Pull Request **hacia `main`**. La pipeline prueba y compila igual que siempre.
-   Una persona lo revisa y **aprueba la publicación** en el entorno `Production`.
-4. **Sincroniza `staging`** de inmediato, para que no pierda el arreglo y no vuelva a aparecer:
-   ```bash
-   git fetch origin
-   git checkout staging
-   git merge origin/main      # si staging no tiene cambios propios, será un avance rápido
-   git push origin staging
-   ```
-   (También se puede hacer con un Pull Request de `main` hacia `staging`: la regla lo permite.)
-5. Si el arreglo cambia el comportamiento descrito en `openspec/specs/`, **actualiza la especificación** en el siguiente
-   Pull Request normal.
+   Hace `fetch`, busca la última etiqueta `prod/…` y crea `hotfix/nombre-corto` desde ahí.
+2. Haz **solo el arreglo**, lo mínimo, con su prueba si es posible. Súbela.
+3. Abre el Pull Request **hacia `main`**. Si la rama no partió de producción, la comprobación **falla** y lo dice.
+4. **Publica desde la propia rama:** *Actions → Pipeline → Run workflow → "Use workflow from": `hotfix/nombre-corto` →
+   entorno `produccion`*. Tras aprobar, el arreglo está en producción y se crea la nueva etiqueta.
+5. **Une el Pull Request a `main`**, para que el arreglo no se pierda en la siguiente publicación.
 
-## Qué comprueba la pipeline (`0 · Reglas de ramas`)
+> Mientras un hotfix esté publicado pero **sin unir a `main`**, la pipeline **no deja publicar `main` a producción** (la
+> versión de producción no estaría contenida en `main` y el arreglo se perdería). Hay que unirlo primero.
 
-| Pull Request | Resultado |
+## Qué comprueba la pipeline
+
+**`0 · Destino`** (cada ejecución) y **`0 · Reglas de ramas`** (cada Pull Request):
+
+| Situación | Resultado |
 |---|---|
-| `staging` → `main` | ✅ Permitido (publicación normal) |
-| `hotfix/…` → `main` | ✅ Permitido, **si la rama sale de `main`**. Si arrastra commits de `staging` que no están en producción, **falla** |
-| `feature/`, `fix/`, `docs/`, `chore/` → `staging` | ✅ Permitido |
-| `main` → `staging` | ✅ Permitido (sincronización) |
-| `feature/…` (u otra) → `main` | ❌ Falla: debe pasar primero por `staging` |
-| `hotfix/…` → `staging` | ❌ Falla: los hotfix van a `main` |
-| Nombre fuera de la convención | ❌ Falla, con un mensaje que explica el formato |
+| Pull Request de `feature/…` hacia `main` | ✅ |
+| Pull Request de `hotfix/…` hacia `main` que parte de producción | ✅ |
+| Hotfix que arrastra cambios de `main` sin publicar | ❌ "créalo con `scripts/crear-hotfix.sh`" |
+| Hotfix que no parte de la última versión de producción | ❌ |
+| Rama con nombre fuera de la convención (`fix/`, `docs/`, mayúsculas, espacios…) | ❌ |
+| Publicar desde una rama que no es `main` ni `hotfix/…` | ❌ |
+| Publicar `main` a producción si le falta lo que ya está en producción | ❌ "únelo primero a `main`" |
+| Elegir un entorno que no sea `staging` ni `produccion` | ❌ |
 
-La regla está en [`.github/scripts/validar-ramas.sh`](../.github/scripts/validar-ramas.sh) y se ejecuta con
-[`.github/workflows/reglas-de-ramas.yml`](../.github/workflows/reglas-de-ramas.yml).
+El código está en [`.github/scripts/validar-destino.sh`](../.github/scripts/validar-destino.sh) y
+[`.github/scripts/validar-ramas.sh`](../.github/scripts/validar-ramas.sh), con sus workflows en
+[`pipeline.yml`](../.github/workflows/pipeline.yml) y [`reglas-de-ramas.yml`](../.github/workflows/reglas-de-ramas.yml).
 
-## Para que se cumpla de verdad (en GitHub)
+## Volver atrás
 
-La comprobación **avisa**, pero solo **bloquea** si la marcas como obligatoria. En
-*Settings → Rules → Rulesets → New branch ruleset*, para `main` y para `staging`:
+La pipeline no publica etiquetas antiguas. Para revertir un cambio malo en producción:
+1. `bash scripts/crear-hotfix.sh revertir-algo` (parte de producción).
+2. `git revert <commit-malo>` y súbelo.
+3. Pull Request a `main` y publicar el hotfix como arriba.
 
-- **Require a pull request before merging** (nadie sube directo).
-- **Require status checks to pass:** `0 · Reglas de ramas`, `1 · Probar` y `2 · Compilar`.
-- **Block force pushes** y **Restrict deletions**.
-- Si hay dos personas: pedir **1 aprobación**. Con una sola persona déjalo en 0 o permite el salto a administradores,
-  porque nadie puede aprobar su propio Pull Request.
+(Si es una urgencia máxima, Vercel permite además restaurar un despliegue anterior desde su panel.)
 
-Las comprobaciones aparecen en la lista solo después de haberse ejecutado una vez.
+## Configuración en GitHub (se hace una sola vez)
 
-## Después de unir
+**1. Un solo ruleset, para `main`** (*Settings → Rules → Rulesets*):
+- Enforcement **Active**, destino `main`, sin lista de excepciones.
+- ☑ Restrict deletions · ☑ Block force pushes
+- ☑ Require a pull request before merging (aprobaciones: **0** con una persona, **1** con dos; método de unión: solo **Merge**)
+- ☑ Require status checks: **`0 · Reglas de ramas`**, **`1 · Probar`**, **`2 · Compilar`**
+  (aparecen en la lista después de haberse ejecutado una vez). No marques "up to date" ni "deployments to succeed".
 
-Borra la rama de trabajo (en *Settings → General → Pull Requests* se puede activar **"Automatically delete head branches"**).
-Las ramas `main` y `staging` **nunca se borran**.
+**2. Entornos** (*Settings → Environments*): ambos deben aceptar publicaciones desde `main` **y** desde los hotfix.
+- **`Production`**: *Required reviewers* (tú) · *Deployment branches → Selected branches and tags* → `main` y `hotfix/*`.
+  (El valor "Protected branches" no sirve: los `hotfix/*` no están protegidos y no podrían publicar.)
+- **`staging`**: *Deployment branches → Selected branches* → `main` y `hotfix/*`.
+
+**3. Repositorio** (*Settings → General → Pull Requests*): ☑ Allow merge commits · ☐ squash · ☐ rebase ·
+☑ Automatically delete head branches.
+
+## Antes del primer hotfix (puesta en marcha)
+
+La etiqueta actual (`prod/2026-10-21-042650`) se creó a mano y apunta a una versión **anterior a esta pipeline**. Un hotfix
+creado desde ahí no tendría el botón de publicar a mano. Por eso:
+
+1. Une este cambio a `main`.
+2. Haz **una publicación a producción con la pipeline nueva** (*Run workflow → `main` → `produccion`*). Eso crea una etiqueta
+   desde un commit que ya incluye todo, y a partir de ahí los hotfix funcionan.

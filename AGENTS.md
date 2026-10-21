@@ -50,5 +50,5 @@ Este proyecto usa OpenSpec (`openspec/`). Antes de implementar una funcionalidad
 4. Al terminar, ejecuta `npm test` y `npx @fission-ai/openspec@1.14.3 validate --all --strict`.
 5. Comportamiento vigente: `openspec/specs/`. Negocio: `docs/lean-canvas.md`. Proceso para dos personas: `docs/PROCESO-SDD.md`.
 6. Los textos clínicos (`src/content.js`) los valida el equipo clínico: no los des por definitivos.
-7. Ramas: `feature/`, `fix/`, `docs/` o `chore/` salen de `staging` y van a `staging`; `hotfix/` (solo urgencias) sale de `main` y va a `main`. Nunca abras un Pull Request de una rama de trabajo directo a `main`. Detalle en `docs/FLUJO-DE-RAMAS.md`.
+7. Ramas: una sola permanente, `main`. El trabajo normal va en `feature/…` (sale de `main` y vuelve a `main` por Pull Request). Los arreglos urgentes van en `hotfix/…`, que se crean con `bash scripts/crear-hotfix.sh nombre` desde **lo que está en producción** (última etiqueta `prod/…`), no desde `main`. No existen otras ramas ni `staging` como rama: el destino (staging o producción) se elige al publicar. Detalle en `docs/FLUJO-DE-RAMAS.md`.
 8. Los archivos de `.claude/commands`, `.claude/skills` y `.agents/` los genera OpenSpec (`openspec update`): no los edites a mano.

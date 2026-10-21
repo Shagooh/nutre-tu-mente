@@ -62,12 +62,12 @@ Luego `npx expo start --web --clear` (o `npx expo start --clear` y Expo Go). Est
 > y, sin `--clear`, puede seguir usando la versión anterior sin tus valores (la app se vería sin login, en modo local).
 
 ## 7. Publicar con la pipeline (dos proyectos: staging y producción)
-La pipeline elige el proyecto según la rama (script `.github/scripts/elegir-firebase.sh`):
+La pipeline elige el proyecto según el **entorno** al que se publica (script `.github/scripts/elegir-firebase.sh`). Ambos salen de `main`:
 
-| Rama | Proyecto Firebase | Variables de GitHub que usa |
+| Entorno | Proyecto Firebase | Variables de GitHub que usa |
 |---|---|---|
-| `staging` y Pull Requests | `nutre-tu-mente-stg-…` (pruebas) | `EXPO_PUBLIC_FIREBASE_*` |
-| `main` (producción) | `nutre-tu-mente-prod` | `PROD_EXPO_PUBLIC_FIREBASE_*` |
+| `staging` (automático al unir a `main`, o manual) y Pull Requests | `nutre-tu-mente-stg-…` (pruebas) | `EXPO_PUBLIC_FIREBASE_*` |
+| `produccion` (manual, con aprobación) | `nutre-tu-mente-prod` | `PROD_EXPO_PUBLIC_FIREBASE_*` |
 
 En GitHub: **Settings → Secrets and variables → Actions → pestaña Variables → New repository variable**
 (son *variables*, no *secrets*; no llevan espacios al principio ni al final).
@@ -86,10 +86,10 @@ En GitHub: **Settings → Secrets and variables → Actions → pestaña Variabl
 > *Variables* de GitHub. Aunque la clave web de Firebase no es un secreto (va dentro de la app compilada), conviene
 > **restringirla** en Google Cloud: *APIs y servicios → Credenciales →* tu clave de API → *Restricciones de API*.
 
-Seguridad: si falta alguna de las variables de producción, la pipeline de `main` **falla** a propósito. Nunca usa en
+Seguridad: si falta alguna de las variables de producción, la publicación a producción **falla** a propósito. Nunca usa en
 silencio la configuración de staging para producción (se mezclarían las cuentas y los datos de prueba con los reales).
 
-Sin variables de staging, lo publicado en `staging` funciona en modo local (sin cuentas ni nube).
+Sin variables de staging, lo publicado en el entorno `staging` funciona en modo local (sin cuentas ni nube).
 
 ### Checklist del proyecto de producción
 - [ ] Authentication → Método de acceso → **Correo electrónico/contraseña** habilitado.
@@ -112,9 +112,10 @@ El archivo [`cloudbuild.yaml`](../cloudbuild.yaml) prueba, compila y publica en 
 Cloud Build (sin claves en el repositorio). **Requiere plan Blaze (facturación activada).**
 
 1. Google Cloud Console (mismo proyecto) → habilita **Cloud Build API**.
-2. **Cloud Build → Activadores → Conectar repositorio** (GitHub) → crea dos activadores:
-   - Rama `^main$` y rama `^staging$`, configuración: `cloudbuild.yaml`.
-   - Sustituciones: `_FIREBASE_PROJECT`, `_FIREBASE_API_KEY`, `_FIREBASE_AUTH_DOMAIN`, `_FIREBASE_APP_ID`, `_FIREBASE_SENDER_ID`.
+2. **Cloud Build → Activadores → Conectar repositorio** (GitHub) → crea dos activadores, ambos con la configuración `cloudbuild.yaml`:
+   - **Staging:** se dispara con cada push a la rama `^main$`, con `_ENTORNO=staging` y los datos del proyecto de pruebas.
+   - **Producción:** de ejecución **manual**, con `_ENTORNO=produccion` y los datos del proyecto de producción.
+   - Sustituciones de cada uno: `_ENTORNO`, `_FIREBASE_PROJECT`, `_FIREBASE_API_KEY`, `_FIREBASE_AUTH_DOMAIN`, `_FIREBASE_APP_ID`, `_FIREBASE_SENDER_ID`.
 3. **IAM:** a la cuenta `…@cloudbuild.gserviceaccount.com` dale los roles *Administrador de Firebase Hosting*,
    *Administrador de reglas de Firebase* y *Administrador de índices de Cloud Datastore*.
 4. **Evita publicar dos veces:** si Cloud Build publica en Firebase, **no** guardes `FIREBASE_SERVICE_ACCOUNT` en GitHub

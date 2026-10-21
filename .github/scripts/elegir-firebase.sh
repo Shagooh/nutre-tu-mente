@@ -2,8 +2,9 @@
 # Elige la configuración PÚBLICA de Firebase según la rama y la deja en GITHUB_ENV
 # como EXPO_PUBLIC_FIREBASE_*, para que la app se compile contra el proyecto correcto.
 #
-#   push a main            -> proyecto de PRODUCCIÓN (variables PROD_*)
+#   ENTORNO=produccion      -> proyecto de PRODUCCIÓN (variables PROD_*)
 #   cualquier otro caso     -> proyecto de STAGING    (variables STG_*)
+#   (ENTORNO lo decide el job "0 · Destino": nunca la rama directamente)
 #
 # Seguridad: si faltan variables de producción, la pipeline FALLA. Nunca se usa en
 # silencio la configuración de staging para producción (se mezclarían los datos).
@@ -11,7 +12,7 @@ set -euo pipefail
 
 CLAVES="API_KEY AUTH_DOMAIN PROJECT_ID APP_ID MESSAGING_SENDER_ID"
 
-if [ "${GITHUB_REF_NAME:-}" = "main" ] && [ "${GITHUB_EVENT_NAME:-}" = "push" ]; then
+if [ "${ENTORNO:-}" = "produccion" ]; then
   prefijo="PROD"
   entorno="PRODUCCIÓN"
 else
