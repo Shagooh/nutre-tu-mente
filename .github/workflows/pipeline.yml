@@ -1,28 +1,65 @@
 name: Pipeline
 
-# Etapas: probar → compilar → publicar.
-#   Pull Request  → solo prueba y compila (no publica).
-#   rama staging  → publica en el entorno de pruebas (UAT).
-#   rama main     → publica en producción (con aprobación manual si se configura
-#                   "Required reviewers" en Settings → Environments → Production).
+# Una sola rama permanente: main. Desde main (o desde un hotfix/...) se ELIGE el destino.
+#
+#   Pull Request hacia main  -> prueba y compila (no publica).
+#   Push a main              -> prueba, compila y publica AUTOMÁTICAMENTE en staging.
+#   Ejecución manual         -> Actions > Pipeline > "Run workflow": eliges la rama (main o hotfix/...)
+#                               y el entorno (staging o produccion).
+#                               Producción exige la aprobación del entorno "Production".
+#
+# Cada publicación a producción deja una etiqueta prod/AAAA-MM-DD-HHMMSS: así se sabe qué hay en producción,
+# y de ahí debe salir un hotfix (scripts/crear-hotfix.sh). Detalle en docs/FLUJO-DE-RAMAS.md.
 on:
-  push:
-    branches: [main, staging]
   pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      entorno:
+        description: "Dónde publicar"
+        type: choice
+        options:
+          - staging
+          - produccion
+        default: staging
 
-# Una ejecución nueva cancela la anterior de la misma rama, salvo en main
-# (para no cortar una publicación a producción a la mitad).
+# Solo los Pull Request cancelan la ejecución anterior. Una publicación nunca se cancela por otra rama.
 concurrency:
-  group: pipeline-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: pipeline-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  # 1) Pruebas automáticas de la lógica de la app
+  # 0) Decide A DÓNDE se publica y comprueba que sea seguro (rama permitida, hotfix limpio, nada que se pierda).
+  destino:
+    name: 0 · Destino
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      entorno: ${{ steps.destino.outputs.entorno }}
+      publica: ${{ steps.destino.outputs.publica }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # historial y etiquetas completos
+      - name: Decidir y validar el destino
+        id: destino
+        # Los nombres de rama los escribe cada persona: se pasan por entorno, nunca dentro del script.
+        env:
+          EVENTO: ${{ github.event_name }}
+          ENTORNO_PEDIDO: ${{ inputs.entorno }}
+          RAMA: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: bash .github/scripts/validar-destino.sh
+
+  # 1) Pruebas automáticas de la lógica de la app y validación de las especificaciones
   probar:
     name: 1 · Probar
+    needs: destino
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -42,12 +79,13 @@ jobs:
   # 2) Compilar web y Android (detecta errores de código y de dependencias)
   compilar:
     name: 2 · Compilar
-    needs: probar
+    needs: [destino, probar]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Configuración pública de Firebase (no son secretos), en Settings → Secrets and variables →
-    # Actions → pestaña "Variables". El script elige staging o producción según la rama.
+    # Configuración pública de Firebase (no son secretos), en Settings > Secrets and variables >
+    # Actions > pestaña "Variables". El script elige staging o producción según ENTORNO.
     env:
+      ENTORNO: ${{ needs.destino.outputs.entorno }}
       # Staging (variables que ya existían) y producción (con prefijo PROD_).
       STG_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
       STG_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
@@ -82,23 +120,30 @@ jobs:
           path: dist
           retention-days: 7
 
-  # 3) Publicar: staging o producción según la rama.
+  # 3) Publicar en el entorno elegido (staging o producción).
   #    Hay dos proveedores y cada uno se activa SOLO si existen sus claves:
-  #      · Vercel   → VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-  #      · Firebase → FIREBASE_SERVICE_ACCOUNT, FIREBASE_PROJECT_ID (Google)
+  #      - Vercel   -> VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+  #      - Firebase -> FIREBASE_SERVICE_ACCOUNT, FIREBASE_PROJECT_ID (Google)
   #    Para completar la migración, borra los secrets de Vercel y el paso "Publicar en Vercel".
   publicar:
-    name: 3 · Publicar (${{ github.ref_name == 'main' && 'producción' || 'staging' }})
-    needs: compilar
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    name: 3 · Publicar (${{ needs.destino.outputs.entorno }})
+    needs: [destino, compilar]
+    if: needs.destino.outputs.publica == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write # para etiquetar la versión que queda en producción
+    # Una publicación a producción nunca se cancela; una a staging puede ser reemplazada por otra más nueva.
+    concurrency:
+      group: publicar-${{ needs.destino.outputs.entorno }}
+      cancel-in-progress: ${{ needs.destino.outputs.entorno == 'staging' }}
     # Crea el registro en la sección "Deployments" de GitHub y habilita
     # la aprobación manual en el entorno "Production".
     environment:
-      name: ${{ github.ref_name == 'main' && 'Production' || 'staging' }}
+      name: ${{ needs.destino.outputs.entorno == 'produccion' && 'Production' || 'staging' }}
       url: ${{ steps.firebase.outputs.details_url || steps.desplegar.outputs.url }}
     env:
+      ENTORNO: ${{ needs.destino.outputs.entorno }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -140,8 +185,8 @@ jobs:
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
-          # main → canal "live" (producción); staging → canal fijo "staging" (caduca a los 30 días sin publicar).
-          channelId: ${{ github.ref_name == 'main' && 'live' || 'staging' }}
+          # producción -> canal "live"; staging -> canal fijo "staging" (caduca a los 30 días sin publicar).
+          channelId: ${{ needs.destino.outputs.entorno == 'produccion' && 'live' || 'staging' }}
           expires: 30d
 
       # --- Vercel (se puede borrar al terminar la migración) --------------------
@@ -158,7 +203,7 @@ jobs:
         if: env.VERCEL_TOKEN != ''
         run: |
           VERCEL="npx --yes vercel@65.0.0"
-          if [ "$GITHUB_REF_NAME" = "main" ]; then
+          if [ "$ENTORNO" = "produccion" ]; then
             $VERCEL pull --yes --environment=production --token="$VERCEL_TOKEN"
             $VERCEL build --prod --token="$VERCEL_TOKEN"
             url=$($VERCEL deploy --prebuilt --prod --token="$VERCEL_TOKEN" | tail -n 1)
@@ -176,3 +221,17 @@ jobs:
           fi
           echo "Publicado en: $url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # --- Registrar qué versión quedó en producción ---------------------------
+      # La etiqueta prod/... es la referencia de la que debe salir un hotfix.
+      - name: Etiquetar la versión que quedó en producción
+        if: needs.destino.outputs.entorno == 'produccion' && (steps.desplegar.outcome == 'success' || steps.firebase.outcome == 'success')
+        run: |
+          etiqueta="prod/$(date -u +%Y-%m-%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$etiqueta" -m "Producción: $GITHUB_SHA (rama $GITHUB_REF_NAME, ejecución $GITHUB_RUN_ID, por $GITHUB_ACTOR)" "$GITHUB_SHA"
+          git push origin "$etiqueta"
+          echo "Etiqueta creada: $etiqueta"
+          echo "### Producción actualizada" >> "$GITHUB_STEP_SUMMARY"
+          echo "Versión \`${GITHUB_SHA:0:7}\` publicada. Etiqueta: \`$etiqueta\`." >> "$GITHUB_STEP_SUMMARY"

@@ -51,9 +51,9 @@ La forma exacta del comando **depende de la herramienta** (algunas usan `/opsx-p
 
 Cada persona usa **su propio agente**; los documentos son los mismos.
 
-1. **Persona A propone.** Crea una rama `feature/<nombre-del-cambio>` desde `staging` (ver [flujo de ramas](FLUJO-DE-RAMAS.md)) y ejecuta `propose` con **2 a 4 frases** (qué quiere, para quién y
+1. **Persona A propone.** Crea una rama `feature/<nombre-del-cambio>` desde `main` (ver [flujo de ramas](FLUJO-DE-RAMAS.md)) y ejecuta `propose` con **2 a 4 frases** (qué quiere, para quién y
    en qué situación). El agente suele hacer preguntas: respóndelas, y revisa lo generado.
-2. **Pull Request solo de la propuesta** hacia `staging`. **Persona B revisa**: ¿respeta la
+2. **Pull Request solo de la propuesta** hacia `main`. **Persona B revisa**: ¿respeta la
    [constitución](../openspec/constitution.md)?, ¿cada *Scenario* se puede comprobar?, ¿faltan casos límite (sin conexión,
    volver tras días, datos de otra cuenta, señales de riesgo)? Si toca temas clínicos, también el equipo clínico. Se une
    cuando ambas están de acuerdo.
@@ -67,7 +67,7 @@ Cada persona usa **su propio agente**; los documentos son los mismos.
 
 ### Reglas para no pisarse
 - **Una propuesta, una persona responsable.** Quien la escribe no la aprueba.
-- **Ramas cortas** y Pull Requests pequeños. Se actualiza la rama desde `staging` con frecuencia.
+- **Ramas cortas** y Pull Requests pequeños. Se actualiza la rama desde `main` con frecuencia.
 - **Archivos compartidos** (`App.js`, `src/content.js`, `package.json`): se avisa antes de tocarlos.
 - **Cambiar de idea = cambiar primero los documentos** (`update`), en un Pull Request, antes del código.
 - **Los textos clínicos** (`src/content.js`) siempre pasan por el equipo clínico.

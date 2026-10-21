@@ -1,11 +1,11 @@
 name: Reglas de ramas
 
-# Valida el nombre de la rama y hacia dónde puede ir cada Pull Request.
-# Convención y flujo: docs/FLUJO-DE-RAMAS.md
+# Valida el nombre de la rama de cada Pull Request y, en un hotfix, que parta de lo que está en producción.
+# Solo existen feature/ y hotfix/, y todo va hacia main. Convención y flujo: docs/FLUJO-DE-RAMAS.md
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
-    branches: [main, staging]
+    branches: [main]
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # historial completo para comprobar que un hotfix salga de main
+          fetch-depth: 0 # historial y etiquetas completos (para comprobar de dónde sale un hotfix)
       - name: Validar la rama
         # Los nombres de rama los escribe cada persona: se pasan por entorno, nunca dentro del script.
         env:

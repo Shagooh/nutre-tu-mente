@@ -3,7 +3,7 @@
 # PASOS PARA ACTIVARLO:
 #  1. Sustituye @dev1 y @dev2 por los usuarios de GitHub de las dos personas de desarrollo.
 #  2. Quita el "#" del inicio de las líneas de abajo.
-#  3. En Settings → Rules → Rulesets (rama main y staging) activa "Require review from Code Owners".
+#  3. En Settings → Rules → Rulesets (rama main) activa "Require review from Code Owners".
 #
 # OJO: con una sola persona activa, quien abre el Pull Request no puede aprobar el suyo y quedaría bloqueada.
 # Actívalo cuando haya dos personas.
