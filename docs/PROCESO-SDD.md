@@ -15,6 +15,7 @@ cualquier agente de IA y con cualquier persona.
 | `openspec/changes/archive/` | Cambios ya terminados, con fecha |
 | [`docs/lean-canvas.md`](lean-canvas.md) | Contexto de negocio y alcance |
 | [`docs/FLUJO-DE-RAMAS.md`](FLUJO-DE-RAMAS.md) | Nombres de ramas, camino normal y camino rápido (`hotfix/`) |
+| [`docs/VERSIONES.md`](VERSIONES.md) | Cómo se versiona la app (`vX.Y.Z`) y por qué una versión no se puede repetir |
 
 > Cambio actual de ejemplo: [`completar-me-esta-costando`](../openspec/changes/completar-me-esta-costando/proposal.md)
 > (validación clínica, protocolo de riesgo, pruebas de interfaz y prueba en teléfono real).

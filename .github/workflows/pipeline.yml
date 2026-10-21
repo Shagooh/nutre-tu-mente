@@ -8,8 +8,9 @@ name: Pipeline
 #                               y el entorno (staging o produccion).
 #                               Producción exige la aprobación del entorno "Production".
 #
-# Cada publicación a producción deja una etiqueta prod/AAAA-MM-DD-HHMMSS: así se sabe qué hay en producción,
-# y de ahí debe salir un hotfix (scripts/crear-hotfix.sh). Detalle en docs/FLUJO-DE-RAMAS.md.
+# La versión de la app vive en package.json. Cada publicación a producción necesita una versión NUEVA y deja una
+# etiqueta vX.Y.Z (no se puede repetir): así se sabe qué hay en producción y de ahí sale un hotfix
+# (scripts/crear-hotfix.sh). Detalle en docs/FLUJO-DE-RAMAS.md y docs/VERSIONES.md.
 on:
   pull_request:
     branches: [main]
@@ -42,6 +43,7 @@ jobs:
     outputs:
       entorno: ${{ steps.destino.outputs.entorno }}
       publica: ${{ steps.destino.outputs.publica }}
+      version: ${{ steps.destino.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,6 +71,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Validar la versión (package.json y package-lock.json)
+        run: node .github/scripts/validar-version.js
       - name: Pruebas
         run: npm test -- --ci
       - name: Validar las especificaciones (OpenSpec)
@@ -144,6 +148,7 @@ jobs:
       url: ${{ steps.firebase.outputs.details_url || steps.desplegar.outputs.url }}
     env:
       ENTORNO: ${{ needs.destino.outputs.entorno }}
+      VERSION: ${{ needs.destino.outputs.version }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -223,15 +228,15 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       # --- Registrar qué versión quedó en producción ---------------------------
-      # La etiqueta prod/... es la referencia de la que debe salir un hotfix.
+      # La etiqueta vX.Y.Z es la referencia de la que debe salir un hotfix, y no se puede repetir.
       - name: Etiquetar la versión que quedó en producción
         if: needs.destino.outputs.entorno == 'produccion' && (steps.desplegar.outcome == 'success' || steps.firebase.outcome == 'success')
         run: |
-          etiqueta="prod/$(date -u +%Y-%m-%d-%H%M%S)"
+          etiqueta="v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$etiqueta" -m "Producción: $GITHUB_SHA (rama $GITHUB_REF_NAME, ejecución $GITHUB_RUN_ID, por $GITHUB_ACTOR)" "$GITHUB_SHA"
+          git tag -a "$etiqueta" -m "Versión $VERSION en producción: $GITHUB_SHA (rama $GITHUB_REF_NAME, ejecución $GITHUB_RUN_ID, por $GITHUB_ACTOR)" "$GITHUB_SHA"
           git push origin "$etiqueta"
           echo "Etiqueta creada: $etiqueta"
           echo "### Producción actualizada" >> "$GITHUB_STEP_SUMMARY"
-          echo "Versión \`${GITHUB_SHA:0:7}\` publicada. Etiqueta: \`$etiqueta\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "Versión **$VERSION** (\`${GITHUB_SHA:0:7}\`) publicada. Etiqueta: \`$etiqueta\`." >> "$GITHUB_STEP_SUMMARY"
