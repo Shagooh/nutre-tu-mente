@@ -62,9 +62,11 @@ jobs:
           path: dist
           retention-days: 7
 
-  # 3) Publicar en Vercel: staging o producción según la rama.
-  #    Se omite sola si no existen las claves (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID).
-  #    Para cambiar de proveedor, reemplaza solo el paso "Publicar".
+  # 3) Publicar: staging o producción según la rama.
+  #    Hay dos proveedores y cada uno se activa SOLO si existen sus claves:
+  #      · Vercel   → VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+  #      · Firebase → FIREBASE_SERVICE_ACCOUNT, FIREBASE_PROJECT_ID (Google)
+  #    Para completar la migración, borra los secrets de Vercel y el paso "Publicar en Vercel".
   publicar:
     name: 3 · Publicar (${{ github.ref_name == 'main' && 'producción' || 'staging' }})
     needs: compilar
@@ -75,19 +77,41 @@ jobs:
     # la aprobación manual en el entorno "Production".
     environment:
       name: ${{ github.ref_name == 'main' && 'Production' || 'staging' }}
-      url: ${{ steps.desplegar.outputs.url }}
+      url: ${{ steps.firebase.outputs.details_url || steps.desplegar.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       STAGING_ALIAS: nutre-tu-mente-staging.vercel.app
+      # "true" si el secret de Firebase existe (así el secret no se expone a los demás pasos).
+      HAY_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_PROJECT_ID != '' }}
     steps:
-      - name: Aviso si faltan las claves
-        if: env.VERCEL_TOKEN == ''
+      - name: Aviso si no hay ningún proveedor configurado
+        if: env.VERCEL_TOKEN == '' && env.HAY_FIREBASE != 'true'
         run: |
-          echo "No hay VERCEL_TOKEN, se omite la publicación (no es un error)."
+          echo "No hay claves de Vercel ni de Firebase, se omite la publicación (no es un error)."
       - uses: actions/checkout@v4
-        if: env.VERCEL_TOKEN != ''
+
+      # --- Google Firebase Hosting ---------------------------------------------
+      # Publica exactamente la versión web que se compiló en la etapa 2.
+      - name: Descargar la versión web compilada
+        if: env.HAY_FIREBASE == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: nutre-tu-mente-web
+          path: dist
+      - name: Publicar en Firebase
+        id: firebase
+        if: env.HAY_FIREBASE == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          # main → canal "live" (producción); staging → canal fijo "staging" (caduca a los 30 días sin publicar).
+          channelId: ${{ github.ref_name == 'main' && 'live' || 'staging' }}
+          expires: 30d
+
+      # --- Vercel (se puede borrar al terminar la migración) --------------------
       - uses: actions/setup-node@v4
         if: env.VERCEL_TOKEN != ''
         with:
@@ -96,7 +120,7 @@ jobs:
       - name: Instalar dependencias
         if: env.VERCEL_TOKEN != ''
         run: npm ci
-      - name: Publicar
+      - name: Publicar en Vercel
         id: desplegar
         if: env.VERCEL_TOKEN != ''
         run: |
@@ -114,7 +138,7 @@ jobs:
               url="https://$STAGING_ALIAS"
             else
               echo "$salida"
-              echo "::warning::No se pudo crear el alias de staging (se usa la dirección del despliegue). Motivo: $(echo "$salida" | tr '\n' ' ' | cut -c1-600)"
+              echo "::warning::No se pudo crear el alias de staging (se usa la dirección del despliegue). Motivo: $(echo "$salida" | tr -s '[:space:]' ' ' | cut -c1-600)"
             fi
           fi
           echo "Publicado en: $url"
