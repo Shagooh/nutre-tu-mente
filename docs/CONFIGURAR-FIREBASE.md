@@ -74,13 +74,17 @@ En GitHub: **Settings → Secrets and variables → Actions → pestaña Variabl
 
 **Producción** — crea estas 5:
 
-| Name | Value |
+| Name | Dónde está el valor (Firebase → ⚙ Configuración del proyecto → Tus apps → app web → Config) |
 |---|---|
-| `PROD_EXPO_PUBLIC_FIREBASE_API_KEY` | `AIzaSyAtK6W-PudYUsLtC54MDythghzA3ESE95U` |
-| `PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | `nutre-tu-mente-prod.firebaseapp.com` |
-| `PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `nutre-tu-mente-prod` |
-| `PROD_EXPO_PUBLIC_FIREBASE_APP_ID` | `1:633683014692:web:c2ad8aef821f2c598414b1` |
-| `PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `633683014692` |
+| `PROD_EXPO_PUBLIC_FIREBASE_API_KEY` | `apiKey` |
+| `PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | `authDomain` |
+| `PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `projectId` |
+| `PROD_EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
+| `PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
+
+> Los valores concretos **no se guardan en este repositorio**. Se copian desde la consola de Firebase directamente a las
+> *Variables* de GitHub. Aunque la clave web de Firebase no es un secreto (va dentro de la app compilada), conviene
+> **restringirla** en Google Cloud: *APIs y servicios → Credenciales →* tu clave de API → *Restricciones de API*.
 
 Seguridad: si falta alguna de las variables de producción, la pipeline de `main` **falla** a propósito. Nunca usa en
 silencio la configuración de staging para producción (se mezclarían las cuentas y los datos de prueba con los reales).
