@@ -18,6 +18,7 @@
 - [ ] Textos nuevos o cambiados revisados por el equipo clínico (si aplica).
 - [ ] Si toca datos: reglas de Firestore y migración revisadas.
 - [ ] Sin claves ni secretos en el código ni en los documentos.
+- [ ] Versión: no la toco, **o** la subí con `npm version <patch|minor|major> --no-git-tag-version` (un hotfix **debe** subirla).
 
 ## Cómo probarlo
 <!-- Pasos para que la otra persona lo compruebe. -->

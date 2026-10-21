@@ -6,11 +6,14 @@
 #   push a main           -> staging, automático
 #   ejecución manual      -> staging o produccion, según lo que se elija
 #
-# "Lo que está en producción" lo marca la última etiqueta prod/AAAA-MM-DD-HHMMSS, que crea la pipeline
-# después de cada publicación a producción.
+# "Lo que está en producción" lo marca la etiqueta vX.Y.Z más alta, que crea la pipeline después de cada
+# publicación a producción. La versión sale de package.json y NO se puede repetir.
 #
 # Variables (las pasa el workflow por entorno): EVENTO, RAMA, SHA, ENTORNO_PEDIDO (solo en ejecución manual).
 set -euo pipefail
+
+# shellcheck source=lib-version.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib-version.sh"
 
 EVENTO="${EVENTO:?falta EVENTO}"
 RAMA="${RAMA:-}"
@@ -20,7 +23,9 @@ SALIDA="${GITHUB_OUTPUT:-/dev/stdout}"
 RESUMEN="${GITHUB_STEP_SUMMARY:-/dev/null}"
 
 falla() { echo "::error::$1"; exit 1; }
-emitir() { echo "entorno=$1" >> "$SALIDA"; echo "publica=$2" >> "$SALIDA"; }
+emitir() { # entorno publica [version]
+  { echo "entorno=$1"; echo "publica=$2"; echo "version=${3:-}"; } >> "$SALIDA"
+}
 
 case "$EVENTO" in
   pull_request)
@@ -47,15 +52,26 @@ else
   falla "Solo se puede publicar desde main o desde una rama hotfix/... Elegiste \"$RAMA\"."
 fi
 
-ETIQUETA="$(git tag -l 'prod/*' --sort=-creatordate | head -1 || true)"
+VERSION="$(version_en "$SHA")"
+ETIQUETA="$(ultima_etiqueta)"
+ULTIMA="${ETIQUETA#v}"
 
 # 2) Reglas adicionales para producción
 if [ "$ENTORNO" = "produccion" ]; then
+  # (v) La versión debe ser válida, nueva y mayor que la última publicada: así nunca se repite.
+  [[ "$VERSION" =~ $RE_SEMVER ]] || falla "La versión de package.json (\"$VERSION\") no es válida. Debe ser X.Y.Z (por ejemplo 1.2.0)."
+  if existe_etiqueta "v$VERSION"; then
+    falla "La versión $VERSION ya se publicó (existe la etiqueta v$VERSION) y no se puede repetir. Sube la versión con: npm version <patch|minor|major> --no-git-tag-version"
+  fi
+  if [ -n "$ETIQUETA" ] && ! es_mayor "$VERSION" "$ULTIMA"; then
+    falla "La versión $VERSION debe ser MAYOR que la última publicada ($ULTIMA). Súbela con: npm version <patch|minor|major> --no-git-tag-version"
+  fi
+
   if [ -z "$ETIQUETA" ]; then
     if [ "$ORIGEN" = "hotfix" ]; then
-      falla "No existe ninguna etiqueta prod/... que indique qué hay en producción, así que no se puede comprobar que el hotfix parta de ahí."
+      falla "No existe ninguna etiqueta vX.Y.Z que indique qué hay en producción, así que no se puede comprobar que el hotfix parta de ahí."
     fi
-    echo "::notice::Todavía no hay etiqueta de producción: esta será la primera publicación etiquetada."
+    echo "::notice::Todavía no hay etiqueta de producción: esta será la primera publicación etiquetada (v$VERSION)."
   else
     # (a) Lo que ya está en producción debe estar contenido en lo que se va a publicar:
     #     así no se pierde nada (por ejemplo, un hotfix publicado que aún no se unió a main).
@@ -77,20 +93,19 @@ if [ "$ENTORNO" = "produccion" ]; then
       fi
     fi
 
-    if [ "$(git rev-parse "$ETIQUETA^{commit}")" = "$(git rev-parse "$SHA")" ]; then
-      echo "::notice::Esta versión ya es la que está en producción ($ETIQUETA)."
-    fi
-
     # Resumen de lo que se va a publicar
     {
-      echo "### Qué se publica en producción"
+      echo "### Qué se publica en producción: v$VERSION"
       echo
       echo "Desde la versión actual (\`$ETIQUETA\`) hasta \`${SHA:0:7}\` (rama \`$RAMA\`):"
       echo
       git log --format='- `%h` %s' "$ETIQUETA..$SHA"
     } >> "$RESUMEN"
   fi
+  emitir produccion true "$VERSION"
+  echo "Destino: produccion, versión v$VERSION (desde la rama $RAMA)."
+  exit 0
 fi
 
-emitir "$ENTORNO" true
+emitir "$ENTORNO" true "$VERSION"
 echo "Destino: $ENTORNO (desde la rama $RAMA)."

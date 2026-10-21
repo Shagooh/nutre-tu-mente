@@ -41,26 +41,29 @@ Combinaciones permitidas al publicar a mano:
 
 **Producción siempre exige la aprobación** de una persona en el entorno `Production`.
 
-## Qué hay en producción: las etiquetas `prod/…`
+## Qué hay en producción: las versiones `vX.Y.Z`
 
 Como `main` puede tener cambios todavía sin publicar, producción **no siempre es lo último de `main`**. Por eso, cada vez que
-se publica a producción la pipeline crea una etiqueta de git `prod/AAAA-MM-DD-HHMMSS` sobre la versión publicada.
+se publica a producción la pipeline crea una etiqueta de git `vX.Y.Z` (la versión de `package.json`) sobre el commit
+publicado. **La versión más alta es la que está hoy en producción, y no se puede repetir.**
 
 ```bash
 git fetch origin --tags
-git tag -l 'prod/*' --sort=-creatordate | head -1     # la que está hoy en producción
-git log --oneline prod/<etiqueta>..origin/main        # lo que main tiene y producción todavía no
+git tag -l 'v*' --sort=-v:refname | head -1           # la que está hoy en producción
+git log --oneline v1.2.0..origin/main                 # lo que main tiene y esa versión todavía no
 ```
 
-Esa etiqueta es la referencia de la que **debe salir cualquier hotfix**.
+Esa etiqueta es la referencia de la que **debe salir cualquier hotfix**. Cómo se versiona: [VERSIONES.md](VERSIONES.md).
 
 ## Camino normal
 
 1. `git switch main && git pull && git switch -c feature/nombre`
 2. Pull Request **hacia `main`**. La pipeline prueba y compila; la otra persona revisa.
 3. Al unirlo, **staging se actualiza solo**. Se prueba ahí.
-4. Cuando se quiera publicar: **Run workflow → rama `main` → entorno `produccion`**, y aprobar. El resumen de la ejecución lista
-   **qué commits se van a publicar** (los que hay desde la etiqueta actual).
+4. Para publicar a producción, primero **sube la versión** (Pull Request pequeño con `npm version <patch|minor|major>
+   --no-git-tag-version`, ver [VERSIONES.md](VERSIONES.md)) y únelo a `main`.
+5. **Run workflow → rama `main` → entorno `produccion`**, y aprobar. El resumen de la ejecución lista **qué commits se
+   van a publicar** (los que hay desde la versión actual) y, al terminar, la pipeline crea la etiqueta `vX.Y.Z`.
 
 ## Camino rápido: `hotfix/`
 
@@ -71,12 +74,14 @@ debería, un texto clínico es incorrecto o se publicó con una configuración e
    ```bash
    bash scripts/crear-hotfix.sh nombre-corto
    ```
-   Hace `fetch`, busca la última etiqueta `prod/…` y crea `hotfix/nombre-corto` desde ahí.
+   Hace `fetch`, busca la última etiqueta `vX.Y.Z`, crea `hotfix/nombre-corto` desde ahí y **sube la versión (`patch`)
+   en un primer commit**, porque cada publicación a producción necesita una versión nueva.
 2. Haz **solo el arreglo**, lo mínimo, con su prueba si es posible. Súbela.
 3. Abre el Pull Request **hacia `main`**. Si la rama no partió de producción, la comprobación **falla** y lo dice.
 4. **Publica desde la propia rama:** *Actions → Pipeline → Run workflow → "Use workflow from": `hotfix/nombre-corto` →
-   entorno `produccion`*. Tras aprobar, el arreglo está en producción y se crea la nueva etiqueta.
-5. **Une el Pull Request a `main`**, para que el arreglo no se pierda en la siguiente publicación.
+   entorno `produccion`*. Tras aprobar, el arreglo está en producción y se crea la etiqueta de la nueva versión.
+5. **Une el Pull Request a `main`**, para que el arreglo no se pierda en la siguiente publicación. Si `package.json` entra en
+   conflicto de versión, **conserva la de `main`** (ver [VERSIONES.md](VERSIONES.md)).
 
 > Mientras un hotfix esté publicado pero **sin unir a `main`**, la pipeline **no deja publicar `main` a producción** (la
 > versión de producción no estaría contenida en `main` y el arreglo se perdería). Hay que unirlo primero.
@@ -91,6 +96,9 @@ debería, un texto clínico es incorrecto o se publicó con una configuración e
 | Pull Request de `hotfix/…` hacia `main` que parte de producción | ✅ |
 | Hotfix que arrastra cambios de `main` sin publicar | ❌ "créalo con `scripts/crear-hotfix.sh`" |
 | Hotfix que no parte de la última versión de producción | ❌ |
+| Hotfix que no sube la versión | ❌ "debe SUBIR la versión" |
+| Publicar a producción una versión repetida, menor o mal escrita | ❌ "no se puede repetir" |
+| `package.json` y `package-lock.json` con versiones distintas | ❌ |
 | Rama con nombre fuera de la convención (`fix/`, `docs/`, mayúsculas, espacios…) | ❌ |
 | Publicar desde una rama que no es `main` ni `hotfix/…` | ❌ |
 | Publicar `main` a producción si le falta lo que ya está en producción | ❌ "únelo primero a `main`" |
@@ -126,11 +134,13 @@ La pipeline no publica etiquetas antiguas. Para revertir un cambio malo en produ
 **3. Repositorio** (*Settings → General → Pull Requests*): ☑ Allow merge commits · ☐ squash · ☐ rebase ·
 ☑ Automatically delete head branches.
 
-## Antes del primer hotfix (puesta en marcha)
+## Puesta en marcha del versionado
 
-La etiqueta actual (`prod/2026-10-21-042650`) se creó a mano y apunta a una versión **anterior a esta pipeline**. Un hotfix
-creado desde ahí no tendría el botón de publicar a mano. Por eso:
-
-1. Une este cambio a `main`.
-2. Haz **una publicación a producción con la pipeline nueva** (*Run workflow → `main` → `produccion`*). Eso crea una etiqueta
-   desde un commit que ya incluye todo, y a partir de ahí los hotfix funcionan.
+- La primera etiqueta es **`v1.0.0`**, creada a mano sobre lo que estaba en producción al empezar a versionar (todo estaba
+  en `1.0.0`).
+- Un hotfix usa **la definición de la pipeline que tenga su propia rama** (la de la versión de la que sale). Por eso, los
+  hotfix creados desde `v1.0.0` usarían todavía la pipeline anterior, **sin** estas reglas de versión. La **primera
+  publicación hecha con esta pipeline** deja una etiqueta (por ejemplo `v1.0.1`) sobre un commit que ya las incluye, y desde
+  entonces todo funciona igual. Conviene hacer esa primera publicación pronto.
+- Las etiquetas antiguas `prod/…` ya no se usan. Se pueden borrar **después** de esa primera publicación (hasta entonces
+  las sigue usando la pipeline anterior).
