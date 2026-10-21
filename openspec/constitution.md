@@ -1,6 +1,6 @@
 # Principios del proyecto · Nutre tu mente
 
-Estas reglas **no se negocian por funcionalidad**. Toda especificación, plan y Pull Request se revisa contra ellas.
+Estas reglas **no se negocian por funcionalidad**. Toda propuesta, especificación y Pull Request se revisa contra ellas.
 Salen del [Lean Canvas](../docs/lean-canvas.md) (sobre todo de los puntos J, B, L y M). Cambiarlas requiere acuerdo
 explícito del **equipo clínico** y de las **dos personas de desarrollo**, y se hace en un Pull Request propio.
 
@@ -37,7 +37,7 @@ explícito del **equipo clínico** y de las **dos personas de desarrollo**, y se
 
 ## C. Principios de ingeniería
 
-14. **Todo requisito es verificable.** Cada funcionalidad tiene criterios de aceptación escritos de forma que se puedan
+14. **Todo requisito es verificable.** Cada requisito tiene *Scenario* (WHEN/THEN) escritos de forma que se puedan
     comprobar. Lo que se puede automatizar, se prueba con tests.
 15. **La pipeline en verde es el criterio de "terminado".** No se une nada a `staging` ni a `main` con `1 · Probar` o
     `2 · Compilar` fallando.
@@ -48,5 +48,5 @@ explícito del **equipo clínico** y de las **dos personas de desarrollo**, y se
     Lean Canvas marca como "puede esperar" sin una especificación que lo apruebe.
 19. **Accesible y para móvil.** La app es móvil (Android e iOS). Toda pantalla nueva debe verse y usarse bien en un teléfono,
     con textos legibles y áreas táctiles amplias.
-20. **La especificación y el código no se contradicen.** Si la realidad cambia, se actualiza la especificación **en el mismo
-    Pull Request** que el código.
+20. **La especificación y el código no se contradicen.** Si la realidad cambia, se actualizan los documentos del cambio
+    (y `openspec/specs/` al archivar) **en el mismo Pull Request** que el código.

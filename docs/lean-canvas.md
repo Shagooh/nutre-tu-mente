@@ -231,7 +231,7 @@ widgets para la pantalla de bloqueo · lecciones de largo plazo · recomendacion
 | Encuesta inicial con consentimiento + introducción guiada | ✅ Implementada |
 | Check-in diario | ✅ Implementado |
 | Recordatorios personalizables | 🟡 Código listo, **sin probar** en teléfono |
-| "Me está costando" (respiración, hambre física/emocional, autocuidado) | ✅ Implementado — ver [`specs/001-me-esta-costando`](../specs/001-me-esta-costando/spec.md) |
+| "Me está costando" (respiración, hambre física/emocional, autocuidado) | ✅ Implementado — ver [`openspec/specs/me-esta-costando`](../openspec/specs/me-esta-costando/spec.md) |
 | Frase diaria, mini lecciones y planta que crece | ✅ Implementado (5 lecciones **en borrador**, sin validar) |
 | Métricas: calma antes/después y espacio mental | ✅ Implementadas (locales, sin servidor) |
 | Cuentas y copia en la nube (opcional) | ✅ Implementado con Firebase |

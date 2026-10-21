@@ -12,7 +12,8 @@
 # *                      @dev1 @dev2
 #
 # Los textos clínicos y los principios los revisa siempre el equipo clínico (usuario o equipo de GitHub):
-# /specs/constitution.md @dev1 @dev2 @equipo-clinico
+# /openspec/constitution.md @dev1 @dev2 @equipo-clinico
+# /openspec/config.yaml  @dev1 @dev2
 # /src/content.js        @dev1 @dev2 @equipo-clinico
 #
 # Reglas de seguridad y pipeline: ambas personas.
