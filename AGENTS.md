@@ -39,3 +39,13 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Desarrollo guiado por especificaciones (SDD)
+
+Este proyecto trabaja con especificaciones en `specs/`. Antes de implementar una funcionalidad:
+
+1. Lee `specs/constitution.md` (principios que nunca se rompen: sin peso/calorías/rachas, sin castigos, tono de tú, datos mínimos).
+2. Lee la especificación de la funcionalidad (`specs/NNN-nombre/spec.md`) y cumple sus criterios de aceptación.
+3. Si el comportamiento cambia, actualiza la especificación **en el mismo Pull Request** que el código.
+4. Contexto de negocio: `docs/lean-canvas.md`. Proceso para dos personas: `specs/README.md`.
+5. Los textos clínicos (`src/content.js`) los valida el equipo clínico: no los des por definitivos.
