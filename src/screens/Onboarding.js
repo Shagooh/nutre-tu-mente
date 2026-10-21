@@ -13,7 +13,7 @@ const INTRO = [
   { emoji: '🌱', titulo: 'Tu planta crece contigo', texto: 'Cada vez que te cuidas, crece un poco. Y si un día no entras, no pasa nada: nunca se debilita.' },
 ];
 
-export default function Onboarding({ onTerminar }) {
+export default function Onboarding({ onTerminar, nubeActiva, onTengoCuenta }) {
   const [paso, setPaso] = useState(0);
   const [intro, setIntro] = useState(0);
   const [acepto, setAcepto] = useState(false);
@@ -73,8 +73,9 @@ export default function Onboarding({ onTerminar }) {
           </Texto>
         </Tarjeta>
         <Texto suave style={{ marginBottom: 14 }}>
-          Guardamos solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. No guardamos peso,
-          medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.
+          {nubeActiva
+            ? 'Por defecto guardamos todo solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. Si más adelante creas una cuenta (es opcional), también guardaremos una copia en la nube de Google (Firebase) para que no la pierdas. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'
+            : 'Guardamos solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'}
         </Texto>
         <Pressable style={s.consentimiento} onPress={() => setAcepto(!acepto)} accessibilityRole="checkbox" accessibilityState={{ checked: acepto }}>
           <View style={[s.caja, acepto && s.cajaOn]}>{acepto ? <Text style={s.tic}>✓</Text> : null}</View>
@@ -223,6 +224,9 @@ export default function Onboarding({ onTerminar }) {
             disabled={!puedeSeguir}
           />
           {paso > 0 && !enIntro ? <Boton titulo="Atrás" variante="texto" onPress={atras} /> : null}
+          {paso === 0 && nubeActiva ? (
+            <Boton titulo="Ya tengo una cuenta" variante="texto" onPress={onTengoCuenta} />
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </Pantalla>

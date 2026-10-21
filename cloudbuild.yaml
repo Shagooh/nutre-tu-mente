@@ -1,0 +1,61 @@
+# CI/CD de Google (Cloud Build). Convive con GitHub Actions.
+#
+# Qué hace en cada push (según la rama que dispare el trigger):
+#   1. Instala dependencias y ejecuta las pruebas.
+#   2. Compila la versión web.
+#   3. Publica a Firebase:
+#        main    → producción: Hosting (live) + reglas e índices de Firestore
+#        staging → canal de pruebas "staging" de Hosting (caduca a los 30 días)
+#
+# Se usa la cuenta de servicio de Cloud Build, así que NO hay claves en el repositorio.
+# Configuración (una sola vez): ver docs/CONFIGURAR-FIREBASE.md → "Cloud Build".
+
+substitutions:
+  _FIREBASE_PROJECT: ''          # id del proyecto, ej. nutre-tu-mente-staging
+  _FIREBASE_API_KEY: ''
+  _FIREBASE_AUTH_DOMAIN: ''
+  _FIREBASE_APP_ID: ''
+  _FIREBASE_SENDER_ID: ''
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - id: instalar
+    name: node:22
+    entrypoint: npm
+    args: ['ci']
+
+  - id: probar
+    name: node:22
+    entrypoint: npm
+    args: ['test', '--', '--ci']
+
+  - id: compilar
+    name: node:22
+    entrypoint: npx
+    args: ['expo', 'export', '--platform', 'web']
+    env:
+      - 'EXPO_PUBLIC_FIREBASE_API_KEY=${_FIREBASE_API_KEY}'
+      - 'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${_FIREBASE_AUTH_DOMAIN}'
+      - 'EXPO_PUBLIC_FIREBASE_PROJECT_ID=${_FIREBASE_PROJECT}'
+      - 'EXPO_PUBLIC_FIREBASE_APP_ID=${_FIREBASE_APP_ID}'
+      - 'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${_FIREBASE_SENDER_ID}'
+
+  - id: publicar
+    name: node:22
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        if [ -z "${_FIREBASE_PROJECT}" ]; then
+          echo "Falta la sustitución _FIREBASE_PROJECT: no se publica."; exit 1
+        fi
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          npx --yes firebase-tools@14 deploy --only hosting,firestore:rules,firestore:indexes \
+            --project "${_FIREBASE_PROJECT}" --non-interactive
+        else
+          npx --yes firebase-tools@14 hosting:channel:deploy staging --expires 30d \
+            --project "${_FIREBASE_PROJECT}" --non-interactive
+        fi

@@ -1,0 +1,89 @@
+rules_version = '2';
+
+// Reglas de seguridad de Nutre tu mente.
+//  - Cada persona solo puede leer y escribir SU propia información (users/{su uid}/...).
+//  - Solo se aceptan los campos que la app necesita. Peso, calorías, fotos o medidas
+//    NO pueden guardarse aunque alguien lo intente (regla "hasOnly").
+//  - Los números tienen rangos válidos y los textos, un largo máximo.
+//  - Todo lo demás está prohibido.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function texto(v, max) {
+      return v is string && v.size() <= max;
+    }
+    function escala(v) {
+      return v is int && v >= 1 && v <= 5;
+    }
+    function fechaValida(v) {
+      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    function esAhora(d) {
+      // Obliga a usar la hora del servidor (serverTimestamp), no una fecha inventada.
+      return d.actualizado == request.time;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if esDueno(uid);
+      allow create, update: if esDueno(uid)
+        && request.resource.data.keys().hasOnly(['perfil', 'retornos', 'lecciones', 'perfilActualizado', 'actualizado'])
+        && request.resource.data.perfil is map
+        && request.resource.data.perfil.keys().hasOnly(['nombre', 'objetivo', 'momento', 'estilo', 'flor', 'recordatorios', 'consentimiento', 'creado'])
+        && texto(request.resource.data.perfil.nombre, 60)
+        && request.resource.data.retornos is int
+        && request.resource.data.lecciones is list
+        && request.resource.data.lecciones.size() <= 50
+        && texto(request.resource.data.perfilActualizado, 40)
+        && esAhora(request.resource.data);
+
+      // Check-ins diarios
+      match /checkins/{id} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado'])
+          && request.resource.data.id == id
+          && fechaValida(request.resource.data.fecha)
+          && escala(request.resource.data.animo)
+          && request.resource.data.necesidades is list
+          && request.resource.data.necesidades.size() <= 10
+          && (!('cuidado' in request.resource.data) || texto(request.resource.data.cuidado, 280))
+          && esAhora(request.resource.data);
+      }
+
+      // Usos del botón "Me está costando"
+      match /cuestas/{id} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'calmaAntes', 'calmaDespues', 'respiro', 'hambre', 'necesidad', 'trato', 'actualizado'])
+          && request.resource.data.id == id
+          && fechaValida(request.resource.data.fecha)
+          && (!('calmaAntes' in request.resource.data) || escala(request.resource.data.calmaAntes))
+          && (!('calmaDespues' in request.resource.data) || escala(request.resource.data.calmaDespues))
+          && (!('respiro' in request.resource.data) || request.resource.data.respiro is bool)
+          && (!('hambre' in request.resource.data) || texto(request.resource.data.hambre, 40))
+          && (!('necesidad' in request.resource.data) || texto(request.resource.data.necesidad, 40))
+          && (!('trato' in request.resource.data) || texto(request.resource.data.trato, 40))
+          && esAhora(request.resource.data);
+      }
+
+      // Espacio mental (pregunta mensual)
+      match /mental/{id} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'valor', 'actualizado'])
+          && request.resource.data.id == id
+          && fechaValida(request.resource.data.fecha)
+          && escala(request.resource.data.valor)
+          && esAhora(request.resource.data);
+      }
+    }
+
+    // Todo lo demás, prohibido.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
