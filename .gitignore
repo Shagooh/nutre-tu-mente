@@ -43,3 +43,5 @@ yarn-error.*
 # build local y editor
 dist-web/
 .idea/
+dist-android/
+coverage/

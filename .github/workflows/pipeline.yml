@@ -1,0 +1,96 @@
+name: Pipeline
+
+# Etapas: probar → compilar → publicar.
+# Corre en cada push a main y en cada Pull Request (en los PR no se publica).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # 1) Pruebas automáticas de la lógica de la app
+  probar:
+    name: 1 · Probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Pruebas
+        run: npm test -- --ci
+
+  # 2) Compilar web y Android (detecta errores de código y de dependencias)
+  compilar:
+    name: 2 · Compilar
+    needs: probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Revisar el proyecto Expo (informa, no bloquea)
+        run: npx expo-doctor
+        continue-on-error: true
+      - name: Compilar versión web
+        run: npx expo export --platform web
+      - name: Compilar paquete de Android
+        run: npx expo export --platform android --output-dir dist-android
+      - name: Guardar la versión web para descargarla
+        uses: actions/upload-artifact@v4
+        with:
+          name: nutre-tu-mente-web
+          path: dist
+          retention-days: 7
+
+  # 3) Publicar en Vercel. Solo en main y solo si existen las claves.
+  #    Si conectaste el repositorio directamente en vercel.com, NO uses esta etapa
+  #    (no agregues las claves): Vercel ya publica solo y se duplicaría.
+  publicar:
+    name: 3 · Publicar
+    needs: compilar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Aviso si faltan las claves
+        if: env.VERCEL_TOKEN == ''
+        run: |
+          echo "No hay VERCEL_TOKEN, se omite la publicación (no es un error)."
+      - uses: actions/checkout@v4
+        if: env.VERCEL_TOKEN != ''
+      - uses: actions/setup-node@v4
+        if: env.VERCEL_TOKEN != ''
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar dependencias
+        if: env.VERCEL_TOKEN != ''
+        run: npm ci
+      - name: Traer configuración de Vercel
+        if: env.VERCEL_TOKEN != ''
+        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Compilar para producción
+        if: env.VERCEL_TOKEN != ''
+        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+      - name: Publicar
+        if: env.VERCEL_TOKEN != ''
+        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
