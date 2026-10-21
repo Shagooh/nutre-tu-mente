@@ -14,6 +14,7 @@ cualquier agente de IA y con cualquier persona.
 | `openspec/changes/<cambio>/` | **Cambios propuestos, aún sin terminar:** `proposal.md`, `design.md`, `tasks.md` y los deltas de las especificaciones |
 | `openspec/changes/archive/` | Cambios ya terminados, con fecha |
 | [`docs/lean-canvas.md`](lean-canvas.md) | Contexto de negocio y alcance |
+| [`docs/FLUJO-DE-RAMAS.md`](FLUJO-DE-RAMAS.md) | Nombres de ramas, camino normal y camino rápido (`hotfix/`) |
 
 > Cambio actual de ejemplo: [`completar-me-esta-costando`](../openspec/changes/completar-me-esta-costando/proposal.md)
 > (validación clínica, protocolo de riesgo, pruebas de interfaz y prueba en teléfono real).
@@ -50,7 +51,7 @@ La forma exacta del comando **depende de la herramienta** (algunas usan `/opsx-p
 
 Cada persona usa **su propio agente**; los documentos son los mismos.
 
-1. **Persona A propone.** Crea una rama `cambio/<nombre>` y ejecuta `propose` con **2 a 4 frases** (qué quiere, para quién y
+1. **Persona A propone.** Crea una rama `feature/<nombre-del-cambio>` desde `staging` (ver [flujo de ramas](FLUJO-DE-RAMAS.md)) y ejecuta `propose` con **2 a 4 frases** (qué quiere, para quién y
    en qué situación). El agente suele hacer preguntas: respóndelas, y revisa lo generado.
 2. **Pull Request solo de la propuesta** hacia `staging`. **Persona B revisa**: ¿respeta la
    [constitución](../openspec/constitution.md)?, ¿cada *Scenario* se puede comprobar?, ¿faltan casos límite (sin conexión,
