@@ -56,7 +56,10 @@ Abre `.env` y pega los valores:
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
 | `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
 
-Luego `npm run web` (o `npm start` y Expo Go). Estos valores **no son secretos**; `.env` no se sube a git de todos modos.
+Luego `npx expo start --web --clear` (o `npx expo start --clear` y Expo Go). Estos valores **no son secretos**; `.env` no se sube a git de todos modos.
+
+> **Importante:** la primera vez, y cada vez que cambies `.env`, usa `--clear`. Expo guarda en caché el código compilado
+> y, sin `--clear`, puede seguir usando la versión anterior sin tus valores (la app se vería sin login, en modo local).
 
 ## 7. Publicar con la pipeline
 En GitHub: **Settings → Secrets and variables → Actions → pestaña Variables → New repository variable**.

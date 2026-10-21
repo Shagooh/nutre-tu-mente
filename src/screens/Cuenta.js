@@ -71,6 +71,16 @@ export default function Cuenta({ usuario, estadoSync, conflicto, onCerrar, onSal
         : estadoSync.cuando
         ? 'Todo guardado en la nube ✓'
         : 'Aún no se ha sincronizado.';
+    const pista =
+      estadoSync.estado !== 'error'
+        ? ''
+        : estadoSync.codigo === 'permission-denied'
+        ? 'Firestore rechazó el guardado. Revisa que las reglas de firestore.rules estén publicadas.'
+        : estadoSync.codigo === 'unavailable'
+        ? 'No hay conexión con Firestore en este momento.'
+        : estadoSync.codigo
+        ? `Detalle técnico: ${estadoSync.codigo}`
+        : '';
     return (
       <Pantalla edges={['top', 'bottom']}>
         {cabecera}
@@ -82,6 +92,7 @@ export default function Cuenta({ usuario, estadoSync, conflicto, onCerrar, onSal
           <Texto suave style={{ fontSize: 14, marginTop: 4 }}>
             Tu progreso queda guardado para que no se pierda si cambias de teléfono.
           </Texto>
+          {pista ? <Texto style={{ fontSize: 14, marginTop: 8, color: '#A33A2A' }}>{pista}</Texto> : null}
         </Tarjeta>
         <Boton titulo="Sincronizar ahora" variante="suave" onPress={onSincronizar} style={{ marginBottom: 10 }} />
         <Boton titulo="Cerrar sesión" variante="suave" onPress={onSalir} style={{ marginBottom: 20 }} />

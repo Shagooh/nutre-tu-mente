@@ -61,9 +61,11 @@ export default function App() {
         cuentaUid: usuario.uid,
         ultimaSync: res.remoto.ultimaSync,
       }));
-      setEstadoSync({ estado: 'ok', cuando: Date.now() });
+      setEstadoSync({ estado: 'ok', cuando: Date.now(), codigo: null });
     } catch (e) {
-      setEstadoSync((s) => ({ ...s, estado: 'error' }));
+      console.warn('[sincronizar]', e);
+      const codigo = (e && e.code) || String((e && e.message) || e);
+      setEstadoSync((s) => ({ ...s, estado: 'error', codigo }));
     } finally {
       sincronizando.current = false;
     }
