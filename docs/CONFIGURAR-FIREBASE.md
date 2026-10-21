@@ -61,10 +61,38 @@ Luego `npx expo start --web --clear` (o `npx expo start --clear` y Expo Go). Est
 > **Importante:** la primera vez, y cada vez que cambies `.env`, usa `--clear`. Expo guarda en caché el código compilado
 > y, sin `--clear`, puede seguir usando la versión anterior sin tus valores (la app se vería sin login, en modo local).
 
-## 7. Publicar con la pipeline
-En GitHub: **Settings → Secrets and variables → Actions → pestaña Variables → New repository variable**.
-Crea las mismas 5 variables `EXPO_PUBLIC_FIREBASE_*` (son *variables*, no *secrets*).
-Sin ellas, lo publicado funciona en modo local, como hasta ahora.
+## 7. Publicar con la pipeline (dos proyectos: staging y producción)
+La pipeline elige el proyecto según la rama (script `.github/scripts/elegir-firebase.sh`):
+
+| Rama | Proyecto Firebase | Variables de GitHub que usa |
+|---|---|---|
+| `staging` y Pull Requests | `nutre-tu-mente-stg-…` (pruebas) | `EXPO_PUBLIC_FIREBASE_*` |
+| `main` (producción) | `nutre-tu-mente-prod` | `PROD_EXPO_PUBLIC_FIREBASE_*` |
+
+En GitHub: **Settings → Secrets and variables → Actions → pestaña Variables → New repository variable**
+(son *variables*, no *secrets*; no llevan espacios al principio ni al final).
+
+**Producción** — crea estas 5:
+
+| Name | Value |
+|---|---|
+| `PROD_EXPO_PUBLIC_FIREBASE_API_KEY` | `AIzaSyAtK6W-PudYUsLtC54MDythghzA3ESE95U` |
+| `PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | `nutre-tu-mente-prod.firebaseapp.com` |
+| `PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `nutre-tu-mente-prod` |
+| `PROD_EXPO_PUBLIC_FIREBASE_APP_ID` | `1:633683014692:web:c2ad8aef821f2c598414b1` |
+| `PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `633683014692` |
+
+Seguridad: si falta alguna de las variables de producción, la pipeline de `main` **falla** a propósito. Nunca usa en
+silencio la configuración de staging para producción (se mezclarían las cuentas y los datos de prueba con los reales).
+
+Sin variables de staging, lo publicado en `staging` funciona en modo local (sin cuentas ni nube).
+
+### Checklist del proyecto de producción
+- [ ] Authentication → Método de acceso → **Correo electrónico/contraseña** habilitado.
+- [ ] Authentication → Configuración → **Dominios autorizados**: añade `nutre-tu-mente.vercel.app`.
+- [ ] Firestore → **Reglas**: publica el contenido de `firestore.rules`.
+- [ ] Las 5 variables `PROD_EXPO_PUBLIC_FIREBASE_*` creadas en GitHub.
+- [ ] Alerta de presupuesto si algún día se activa el plan Blaze.
 
 ## Cómo comprobar que funciona
 - [ ] Crear una cuenta desde Ajustes → **Crear cuenta o iniciar sesión**.

@@ -41,17 +41,24 @@ jobs:
     needs: probar
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Configuración pública de Firebase (no son secretos). Se define en
-    # Settings → Secrets and variables → Actions → pestaña "Variables".
-    # Si no existen, la app se compila en modo local (sin cuentas ni nube).
+    # Configuración pública de Firebase (no son secretos), en Settings → Secrets and variables →
+    # Actions → pestaña "Variables". El script elige staging o producción según la rama.
     env:
-      EXPO_PUBLIC_FIREBASE_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
-      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
-      EXPO_PUBLIC_FIREBASE_APP_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_APP_ID }}
-      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      # Staging (variables que ya existían) y producción (con prefijo PROD_).
+      STG_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
+      STG_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      STG_PROJECT_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      STG_APP_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_APP_ID }}
+      STG_MESSAGING_SENDER_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      PROD_API_KEY: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_API_KEY }}
+      PROD_AUTH_DOMAIN: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      PROD_PROJECT_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      PROD_APP_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_APP_ID }}
+      PROD_MESSAGING_SENDER_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
     steps:
       - uses: actions/checkout@v4
+      - name: Elegir la configuración de Firebase (staging o producción)
+        run: bash .github/scripts/elegir-firebase.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -92,12 +99,17 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       STAGING_ALIAS: nutre-tu-mente-staging.vercel.app
-      # Configuración pública de Firebase: "vercel build" compila por su cuenta y la necesita.
-      EXPO_PUBLIC_FIREBASE_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
-      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
-      EXPO_PUBLIC_FIREBASE_APP_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_APP_ID }}
-      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      # Staging (variables que ya existían) y producción (con prefijo PROD_).
+      STG_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
+      STG_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      STG_PROJECT_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      STG_APP_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_APP_ID }}
+      STG_MESSAGING_SENDER_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      PROD_API_KEY: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_API_KEY }}
+      PROD_AUTH_DOMAIN: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      PROD_PROJECT_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      PROD_APP_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_APP_ID }}
+      PROD_MESSAGING_SENDER_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
       # "true" si el secret de Firebase existe (así el secret no se expone a los demás pasos).
       HAY_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_PROJECT_ID != '' }}
     steps:
@@ -106,6 +118,8 @@ jobs:
         run: |
           echo "No hay claves de Vercel ni de Firebase, se omite la publicación (no es un error)."
       - uses: actions/checkout@v4
+      - name: Elegir la configuración de Firebase (staging o producción)
+        run: bash .github/scripts/elegir-firebase.sh
 
       # --- Google Firebase Hosting ---------------------------------------------
       # Publica exactamente la versión web que se compiló en la etapa 2.
