@@ -49,3 +49,8 @@ coverage/
 
 .vercel
 .env*
+.firebase/
+
+# variables locales con la configuracion de Firebase
+.env
+!.env.example

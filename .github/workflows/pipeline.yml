@@ -1,15 +1,20 @@
 name: Pipeline
 
 # Etapas: probar → compilar → publicar.
-# Corre en cada push a main y en cada Pull Request (en los PR no se publica).
+#   Pull Request  → solo prueba y compila (no publica).
+#   rama staging  → publica en el entorno de pruebas (UAT).
+#   rama main     → publica en producción (con aprobación manual si se configura
+#                   "Required reviewers" en Settings → Environments → Production).
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
 
+# Una ejecución nueva cancela la anterior de la misma rama, salvo en main
+# (para no cortar una publicación a producción a la mitad).
 concurrency:
   group: pipeline-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -36,8 +41,24 @@ jobs:
     needs: probar
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Configuración pública de Firebase (no son secretos), en Settings → Secrets and variables →
+    # Actions → pestaña "Variables". El script elige staging o producción según la rama.
+    env:
+      # Staging (variables que ya existían) y producción (con prefijo PROD_).
+      STG_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
+      STG_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      STG_PROJECT_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      STG_APP_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_APP_ID }}
+      STG_MESSAGING_SENDER_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      PROD_API_KEY: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_API_KEY }}
+      PROD_AUTH_DOMAIN: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      PROD_PROJECT_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      PROD_APP_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_APP_ID }}
+      PROD_MESSAGING_SENDER_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
     steps:
       - uses: actions/checkout@v4
+      - name: Elegir la configuración de Firebase (staging o producción)
+        run: bash .github/scripts/elegir-firebase.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -57,26 +78,69 @@ jobs:
           path: dist
           retention-days: 7
 
-  # 3) Publicar en Vercel. Solo en main y solo si existen las claves.
-  #    Si conectaste el repositorio directamente en vercel.com, NO uses esta etapa
-  #    (no agregues las claves): Vercel ya publica solo y se duplicaría.
+  # 3) Publicar: staging o producción según la rama.
+  #    Hay dos proveedores y cada uno se activa SOLO si existen sus claves:
+  #      · Vercel   → VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+  #      · Firebase → FIREBASE_SERVICE_ACCOUNT, FIREBASE_PROJECT_ID (Google)
+  #    Para completar la migración, borra los secrets de Vercel y el paso "Publicar en Vercel".
   publicar:
-    name: 3 · Publicar
+    name: 3 · Publicar (${{ github.ref_name == 'main' && 'producción' || 'staging' }})
     needs: compilar
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Crea el registro en la sección "Deployments" de GitHub y habilita
+    # la aprobación manual en el entorno "Production".
+    environment:
+      name: ${{ github.ref_name == 'main' && 'Production' || 'staging' }}
+      url: ${{ steps.firebase.outputs.details_url || steps.desplegar.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      STAGING_ALIAS: nutre-tu-mente-staging.vercel.app
+      # Staging (variables que ya existían) y producción (con prefijo PROD_).
+      STG_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
+      STG_AUTH_DOMAIN: ${{ vars.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      STG_PROJECT_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      STG_APP_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_APP_ID }}
+      STG_MESSAGING_SENDER_ID: ${{ vars.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      PROD_API_KEY: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_API_KEY }}
+      PROD_AUTH_DOMAIN: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      PROD_PROJECT_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+      PROD_APP_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_APP_ID }}
+      PROD_MESSAGING_SENDER_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      # "true" si el secret de Firebase existe (así el secret no se expone a los demás pasos).
+      HAY_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_PROJECT_ID != '' }}
     steps:
-      - name: Aviso si faltan las claves
-        if: env.VERCEL_TOKEN == ''
+      - name: Aviso si no hay ningún proveedor configurado
+        if: env.VERCEL_TOKEN == '' && env.HAY_FIREBASE != 'true'
         run: |
-          echo "No hay VERCEL_TOKEN, se omite la publicación (no es un error)."
+          echo "No hay claves de Vercel ni de Firebase, se omite la publicación (no es un error)."
       - uses: actions/checkout@v4
-        if: env.VERCEL_TOKEN != ''
+      - name: Elegir la configuración de Firebase (staging o producción)
+        run: bash .github/scripts/elegir-firebase.sh
+
+      # --- Google Firebase Hosting ---------------------------------------------
+      # Publica exactamente la versión web que se compiló en la etapa 2.
+      - name: Descargar la versión web compilada
+        if: env.HAY_FIREBASE == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: nutre-tu-mente-web
+          path: dist
+      - name: Publicar en Firebase
+        id: firebase
+        if: env.HAY_FIREBASE == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          # main → canal "live" (producción); staging → canal fijo "staging" (caduca a los 30 días sin publicar).
+          channelId: ${{ github.ref_name == 'main' && 'live' || 'staging' }}
+          expires: 30d
+
+      # --- Vercel (se puede borrar al terminar la migración) --------------------
       - uses: actions/setup-node@v4
         if: env.VERCEL_TOKEN != ''
         with:
@@ -85,12 +149,26 @@ jobs:
       - name: Instalar dependencias
         if: env.VERCEL_TOKEN != ''
         run: npm ci
-      - name: Traer configuración de Vercel
+      - name: Publicar en Vercel
+        id: desplegar
         if: env.VERCEL_TOKEN != ''
-        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-      - name: Compilar para producción
-        if: env.VERCEL_TOKEN != ''
-        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-      - name: Publicar
-        if: env.VERCEL_TOKEN != ''
-        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        run: |
+          VERCEL="npx --yes vercel@65.0.0"
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            $VERCEL pull --yes --environment=production --token="$VERCEL_TOKEN"
+            $VERCEL build --prod --token="$VERCEL_TOKEN"
+            url=$($VERCEL deploy --prebuilt --prod --token="$VERCEL_TOKEN" | tail -n 1)
+          else
+            $VERCEL pull --yes --environment=preview --token="$VERCEL_TOKEN"
+            $VERCEL build --token="$VERCEL_TOKEN"
+            url=$($VERCEL deploy --prebuilt --token="$VERCEL_TOKEN" | tail -n 1)
+            # Dirección fija para staging (si falla, se usa la del despliegue).
+            if salida=$($VERCEL alias set "$url" "$STAGING_ALIAS" --token="$VERCEL_TOKEN" 2>&1); then
+              url="https://$STAGING_ALIAS"
+            else
+              echo "$salida"
+              echo "::warning::No se pudo crear el alias de staging (se usa la dirección del despliegue). Motivo: $(echo "$salida" | tr -s '[:space:]' ' ' | cut -c1-600)"
+            fi
+          fi
+          echo "Publicado en: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"

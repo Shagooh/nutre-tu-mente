@@ -5,8 +5,17 @@ import { ESTILOS, FLORES, SLOTS } from '../content';
 import { horaTexto } from '../logic';
 import { color } from '../theme';
 
-export default function Ajustes({ perfil, onCambiarPerfil, onCambiarRecordatorios, onBorrar }) {
+export default function Ajustes({
+  perfil,
+  nubeActiva,
+  usuario,
+  onAbrirCuenta,
+  onCambiarPerfil,
+  onCambiarRecordatorios,
+  onBorrar,
+}) {
   const [confirmar, setConfirmar] = useState(false);
+  const [errorBorrar, setErrorBorrar] = useState('');
 
   const mover = (id, minutos) => {
     onCambiarRecordatorios(
@@ -25,6 +34,26 @@ export default function Ajustes({ perfil, onCambiarPerfil, onCambiarRecordatorio
     <Pantalla>
       <Titulo>Ajustes</Titulo>
       <Texto suave style={{ marginBottom: 16 }}>Hola, {perfil.nombre}. Aquí decides cómo te acompañamos.</Texto>
+
+      {nubeActiva ? (
+        <Tarjeta>
+          <Text style={s.etiqueta}>MI CUENTA</Text>
+          {usuario ? (
+            <>
+              <Texto style={{ marginBottom: 4 }}>{usuario.email}</Texto>
+              <Texto suave style={{ fontSize: 14, marginBottom: 12 }}>Tu progreso se guarda en la nube.</Texto>
+              <Boton titulo="Administrar mi cuenta" variante="suave" onPress={onAbrirCuenta} />
+            </>
+          ) : (
+            <>
+              <Texto suave style={{ fontSize: 14, marginBottom: 12 }}>
+                Hoy tu progreso vive solo en este teléfono. Si quieres, crea una cuenta para no perderlo.
+              </Texto>
+              <Boton titulo="Crear cuenta o iniciar sesión" variante="suave" onPress={onAbrirCuenta} />
+            </>
+          )}
+        </Tarjeta>
+      ) : null}
 
       <Tarjeta>
         <Text style={s.etiqueta}>RECORDATORIOS</Text>
@@ -85,10 +114,24 @@ export default function Ajustes({ perfil, onCambiarPerfil, onCambiarRecordatorio
         {confirmar ? (
           <>
             <Texto style={{ marginBottom: 10 }}>
-              Se borrarán tus respuestas, check-ins y tu planta. Esto no se puede deshacer. ¿Seguro?
+              {usuario
+                ? 'Se borrarán tus respuestas, check-ins y tu planta, también los guardados en la nube, y se cerrará tu sesión. Esto no se puede deshacer. ¿Seguro?'
+                : 'Se borrarán tus respuestas, check-ins y tu planta. Esto no se puede deshacer. ¿Seguro?'}
             </Texto>
-            <Boton titulo="Sí, borrar todo" variante="acento" onPress={onBorrar} />
-            <Boton titulo="Mejor no" variante="texto" onPress={() => setConfirmar(false)} />
+            {errorBorrar ? <Texto style={{ color: '#A33A2A', marginBottom: 10 }}>{errorBorrar}</Texto> : null}
+            <Boton
+              titulo="Sí, borrar todo"
+              variante="acento"
+              onPress={async () => {
+                setErrorBorrar('');
+                try {
+                  await onBorrar();
+                } catch (e) {
+                  setErrorBorrar('No pudimos borrar tu copia en la nube (¿sin conexión?). No se borró nada. Inténtalo con internet.');
+                }
+              }}
+            />
+            <Boton titulo="Mejor no" variante="texto" onPress={() => { setConfirmar(false); setErrorBorrar(''); }} />
           </>
         ) : (
           <Boton titulo="Borrar todos mis datos" variante="suave" onPress={() => setConfirmar(true)} />

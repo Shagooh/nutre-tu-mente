@@ -5,7 +5,7 @@ import { LECCIONES, OBJETIVOS } from '../content';
 import { cuestasUltimaSemana, fraseDelDia, hoyISO, puntos, saludo } from '../logic';
 import { color } from '../theme';
 
-export default function Hoy({ datos, vuelve, onCerrarVuelve, onAbrir, onIrALecciones }) {
+export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve, onAbrir, onIrALecciones }) {
   const { perfil } = datos;
   const hoy = hoyISO();
   const hechoHoy = datos.checkins.some((c) => c.fecha === hoy);
@@ -71,6 +71,16 @@ export default function Hoy({ datos, vuelve, onCerrarVuelve, onAbrir, onIrALecci
             Has usado "Me está costando" varias veces. Hacerlo habla de que te estás cuidando. Si sientes que es
             demasiado, hablarlo con tu nutricionista o con un profesional puede acompañarte mejor.
           </Texto>
+        </Tarjeta>
+      ) : null}
+
+      {nubeActiva && !usuario ? (
+        <Tarjeta>
+          <Text style={s.etiqueta}>TU PROGRESO</Text>
+          <Texto suave style={{ marginBottom: 10 }}>
+            Hoy vive solo en este teléfono. Si quieres, crea una cuenta para no perderlo si lo cambias.
+          </Texto>
+          <Boton titulo="Crear cuenta (opcional)" variante="suave" onPress={() => onAbrir('cuenta')} />
         </Tarjeta>
       ) : null}
 
