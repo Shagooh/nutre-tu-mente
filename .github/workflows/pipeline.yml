@@ -114,7 +114,8 @@ jobs:
             if salida=$($VERCEL alias set "$url" "$STAGING_ALIAS" --token="$VERCEL_TOKEN" --scope="$VERCEL_SCOPE" 2>&1); then
               url="https://$STAGING_ALIAS"
             else
-              echo "::warning::No se pudo crear el alias de staging (se usa la dirección del despliegue): $salida"
+              echo "$salida"
+              echo "::warning::No se pudo crear el alias de staging (se usa la dirección del despliegue). Motivo: $(echo "$salida" | tr '\n' ' ' | cut -c1-600)"
             fi
           fi
           echo "Publicado en: $url"
