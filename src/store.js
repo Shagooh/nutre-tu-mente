@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { asegurarIds, tocarPerfil } from './fusion';
 import { diasDesde, hoyISO } from './logic';
 
 const KEY = 'nutre-tu-mente:v1';
@@ -12,6 +13,11 @@ export const datosVacios = () => ({
   mental: [],
   retornos: 0,
   ultimaVisita: null,
+  // --- sincronización con la nube (solo si la persona crea una cuenta) ---
+  cuentaUid: null, // a qué cuenta pertenecen estos datos
+  ultimaSync: null,
+  perfilActualizado: null,
+  perfilSucio: false,
 });
 
 export function useStore() {
@@ -26,9 +32,11 @@ export function useStore() {
         const raw = await AsyncStorage.getItem(KEY);
         if (raw) d = { ...d, ...JSON.parse(raw) };
       } catch (e) {}
+      d = asegurarIds(d); // los registros de versiones anteriores reciben un id
       // Volver después de unos días no se castiga: solo se celebra.
       if (d.perfil && diasDesde(d.ultimaVisita) >= 3) {
         d.retornos += 1;
+        Object.assign(d, tocarPerfil());
         setVuelve(true);
       }
       d.ultimaVisita = hoyISO();
