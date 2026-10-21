@@ -4,7 +4,7 @@ name: Pipeline
 #   Pull Request  → solo prueba y compila (no publica).
 #   rama staging  → publica en el entorno de pruebas (UAT).
 #   rama main     → publica en producción (con aprobación manual si se configura
-#                   "Required reviewers" en Settings → Environments → production).
+#                   "Required reviewers" en Settings → Environments → Production).
 on:
   push:
     branches: [main, staging]
@@ -72,9 +72,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Crea el registro en la sección "Deployments" de GitHub y habilita
-    # la aprobación manual en el entorno "production".
+    # la aprobación manual en el entorno "Production".
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      name: ${{ github.ref_name == 'main' && 'Production' || 'staging' }}
       url: ${{ steps.desplegar.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
