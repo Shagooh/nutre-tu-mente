@@ -45,3 +45,7 @@ dist-web/
 .idea/
 dist-android/
 coverage/
+.vercel
+
+.vercel
+.env*
