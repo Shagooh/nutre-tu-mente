@@ -81,6 +81,7 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       STAGING_ALIAS: nutre-tu-mente-staging.vercel.app
+      VERCEL_SCOPE: shagoohs-projects # nombre del equipo en Vercel (no es un secreto)
     steps:
       - name: Aviso si faltan las claves
         if: env.VERCEL_TOKEN == ''
@@ -110,10 +111,10 @@ jobs:
             $VERCEL build --token="$VERCEL_TOKEN"
             url=$($VERCEL deploy --prebuilt --token="$VERCEL_TOKEN" | tail -n 1)
             # Dirección fija para staging (si falla, se usa la del despliegue).
-            if $VERCEL alias set "$url" "$STAGING_ALIAS" --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" > /dev/null 2>&1; then
+            if salida=$($VERCEL alias set "$url" "$STAGING_ALIAS" --token="$VERCEL_TOKEN" --scope="$VERCEL_SCOPE" 2>&1); then
               url="https://$STAGING_ALIAS"
             else
-              echo "::warning::No se pudo crear el alias de staging; se usa la dirección del despliegue."
+              echo "::warning::No se pudo crear el alias de staging (se usa la dirección del despliegue): $salida"
             fi
           fi
           echo "Publicado en: $url"
