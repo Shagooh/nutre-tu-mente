@@ -1,0 +1,21 @@
+# Quién debe revisar qué. GitHub pide automáticamente la revisión de estas personas.
+#
+# PASOS PARA ACTIVARLO:
+#  1. Sustituye @dev1 y @dev2 por los usuarios de GitHub de las dos personas de desarrollo.
+#  2. Quita el "#" del inicio de las líneas de abajo.
+#  3. En Settings → Rules → Rulesets (rama main y staging) activa "Require review from Code Owners".
+#
+# OJO: con una sola persona activa, quien abre el Pull Request no puede aprobar el suyo y quedaría bloqueada.
+# Actívalo cuando haya dos personas.
+#
+# Por defecto, cualquiera de las dos puede revisar:
+# *                      @dev1 @dev2
+#
+# Los textos clínicos y los principios los revisa siempre el equipo clínico (usuario o equipo de GitHub):
+# /openspec/constitution.md @dev1 @dev2 @equipo-clinico
+# /openspec/config.yaml  @dev1 @dev2
+# /src/content.js        @dev1 @dev2 @equipo-clinico
+#
+# Reglas de seguridad y pipeline: ambas personas.
+# /firestore.rules       @dev1 @dev2
+# /.github/              @dev1 @dev2

@@ -39,3 +39,15 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Desarrollo guiado por especificaciones (OpenSpec)
+
+Este proyecto usa OpenSpec (`openspec/`). Antes de implementar una funcionalidad:
+
+1. Lee `openspec/constitution.md` (principios que nunca se rompen: sin peso/calorías/rachas, sin castigos, tono de tú, datos mínimos) y `openspec/config.yaml` (contexto y reglas del proyecto).
+2. Si es una funcionalidad nueva o cambia el comportamiento, **primero** crea un cambio (`/opsx:propose` o el comando equivalente de tu agente) y no escribas código hasta que la propuesta esté aprobada.
+3. Implementa solo las tareas de `openspec/changes/<cambio>/tasks.md` y cumple los *Scenario* de sus especificaciones. Si algo es ambiguo, pregunta.
+4. Al terminar, ejecuta `npm test` y `npx @fission-ai/openspec@1.14.3 validate --all --strict`.
+5. Comportamiento vigente: `openspec/specs/`. Negocio: `docs/lean-canvas.md`. Proceso para dos personas: `docs/PROCESO-SDD.md`.
+6. Los textos clínicos (`src/content.js`) los valida el equipo clínico: no los des por definitivos.
+7. Los archivos de `.claude/commands`, `.claude/skills` y `.agents/` los genera OpenSpec (`openspec update`): no los edites a mano.

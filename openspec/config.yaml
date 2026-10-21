@@ -1,0 +1,44 @@
+schema: spec-driven
+
+context: |
+  Proyecto: "Nutre tu mente", app MÓVIL (Expo / React Native, Android e iOS) de psiconutrición de Nutrimind.
+  Acompaña a mujeres que viven en guerra con la comida (ciclo control -> descontrol -> culpa), sobre todo en los
+  momentos de desborde. Negocio y alcance: docs/lean-canvas.md.
+  Idioma: es. Todos los artefactos se escriben en español.
+  Mantén en inglés los encabezados estructurales de OpenSpec y las palabras SHALL/MUST.
+
+  PRINCIPIOS QUE NUNCA SE ROMPEN (texto completo en openspec/constitution.md: léelo antes de proponer o implementar):
+  - Nada que empuje al control: sin calorías, pasos, peso, medidas, rachas ni comparaciones.
+  - Nunca castiga: sin penalizaciones; la planta solo crece; volver tras días se recibe con calidez.
+  - No diagnostica ni reemplaza la atención profesional; ante señales de riesgo contiene y deriva.
+  - El contenido clínico lo valida el equipo clínico; los textos en borrador se marcan como tal.
+  - Tono de tú, cálido y sin juicios. Evitar: dieta, prohibido, permitido, "deberías", fuerza de voluntad,
+    compensar, quemar, "todo o nada".
+  - Datos mínimos; consentimiento y borrado total; la nube es opcional (funciona sin cuenta y sin conexión).
+  - Sin secretos en el repositorio.
+
+  Stack: Expo SDK 57, JavaScript, Firebase (Auth y Firestore, opcional), pruebas con Jest (npm test).
+
+rules:
+  proposal:
+    - Indica qué queda fuera de alcance.
+    - Señala qué principios de openspec/constitution.md toca y si requiere revisión del equipo clínico.
+  specs:
+    - Cada Scenario debe poder comprobarse, con una prueba automática o con pasos manuales.
+    - "No inventes textos clínicos: si falta una decisión del equipo clínico, déjala como pregunta abierta."
+  design:
+    - Justifica cualquier dependencia o servicio nuevo y menciona qué ocurre en Expo Go.
+  tasks:
+    - Tareas de máximo 2 horas.
+    - Incluye un grupo final de verificación con las pruebas (npm test) y la revisión de los escenarios.
+    - Marca las tareas que requieren al equipo clínico.
+
+operations:
+  apply:
+    guidance:
+      - Lee openspec/constitution.md y la especificación antes de tocar código.
+      - Implementa solo las tareas del cambio; si algo es ambiguo, pregunta.
+      - Ejecuta npm test al terminar cada grupo de tareas.
+  archive:
+    guidance:
+      - Antes de archivar, comprueba que las especificaciones vigentes reflejan el comportamiento real.
