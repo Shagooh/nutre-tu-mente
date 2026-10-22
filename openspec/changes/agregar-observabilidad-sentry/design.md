@@ -55,8 +55,9 @@ Así las pruebas sustituyen el módulo y, si el servicio cambia, solo cambia est
 principio 10; se acepta porque ese tramo es corto y se puede reproducir.
 
 ### 5. Release y entorno
-- `release` = `package.json` `version` (`X.Y.Z`), tomada de `app.config.js` y expuesta en `extra`, de modo que la app, la
-  etiqueta `vX.Y.Z` y Sentry usan **una sola fuente**. No se escribe la versión en ningún otro archivo (`docs/VERSIONES.md`).
+- `release` = `version` de `package.json` (`X.Y.Z`), importada directamente en `src/reportes.js`. `app.config.js` ya toma
+  la misma versión para las tiendas, así la app, la etiqueta `vX.Y.Z` y Sentry usan **una sola fuente**. No se escribe
+  la versión en ningún otro archivo (`docs/VERSIONES.md`).
 - `environment` = `staging` o `produccion`, que la pipeline ya decide en el job `0 · Destino`; llega a la compilación
   como `EXPO_PUBLIC_ENTORNO`. Si falta, vale `desarrollo` y no se reporta nada.
 
@@ -69,10 +70,22 @@ principio 10; se acepta porque ese tramo es corto y se puede reproducir.
   compila sin reportes y avisa con un `::notice::`.
 
 ### 7. Source maps desde la pipeline, no desde EAS
-La petición original mencionaba EAS, pero el repositorio no lo usa. Se suben los mapas en el job `2 · Compilar`, justo
-después de `expo export`, con la herramienta de línea de comandos de Sentry y el mismo *release*, solo cuando hay token.
-En un Pull Request (sin secrets) se omite el paso. **Esto debe confirmarse con la documentación vigente de Sentry y de
-Expo SDK 57 antes de implementar** (tarea 1.1), porque el flujo de subida cambia entre versiones.
+La petición original mencionaba EAS, pero el repositorio no lo usa. Flujo comprobado con la documentación de Sentry y con
+una exportación real (tarea 1.1):
+
+- `metro.config.js` usa `getSentryExpoConfig`, que añade un *debug id* a cada paquete y a su mapa. Se comprobó que
+  `expo export --platform web --source-maps` deja el id en el `.js` y en el `.map`.
+- En `2 · Compilar`, tras exportar, `sentry-expo-upload-sourcemaps dist` sube los mapas (con `SENTRY_AUTH_TOKEN`,
+  `SENTRY_ORG` y `SENTRY_PROJECT`) y **después se borran los `.map` de `dist`** para que no queden públicos en la web.
+  Sentry empareja cada error con su mapa por el *debug id*, no por el *release*.
+- Sin token, DSN, organización o proyecto (por ejemplo, Pull Requests de ramas externas) el paso solo borra los mapas.
+- El plugin `@sentry/react-native/expo` **no se añade todavía**: solo sirve para compilaciones nativas (EAS o `prebuild`),
+  que hoy no existen. Se añade, con `SENTRY_AUTH_TOKEN` como secreto de EAS, cuando se adopten.
+
+### 8. La web también reporta
+El SDK usa en web sus integraciones de navegador (`isWeb()` en su código), y la versión web es la que se publica hoy.
+Se comprobó de extremo a extremo (tarea 6.1): un error en la web compilada con un DSN local llegó con la versión, el
+entorno y sin datos personales, y un error anterior al consentimiento no se envió.
 
 ### Expo Go
 `@sentry/react-native` trae código nativo. En **Expo Go** el SDK arranca en modo reducido (captura errores de JavaScript,
@@ -86,6 +99,8 @@ caídas nativas solo se pueden probar con un *development build*. En la web func
   staging antes de producción.
 - **No se ven los fallos del *onboarding*** → asumido (decisión 4); se revisa si aparecen quejas.
 - **El plan gratuito se agota** → se limita el muestreo de errores repetidos y se eliminan eventos de desarrollo.
+- **La caché de Metro no cambia al cambiar variables `EXPO_PUBLIC_*`** (se observó en las pruebas) → en local, usar
+  `npx expo export --clear` al cambiar el DSN; la pipeline parte de cero y no se ve afectada.
 - **Dependencia nativa en Expo Go** → no bloquea el desarrollo (decisión de "Expo Go"), pero obliga a un *development
   build* para probar caídas nativas.
 - **Sentry es un tercero que recibe datos técnicos de personas** → el texto de consentimiento debe mencionarlo; lo redacta

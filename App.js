@@ -9,6 +9,7 @@ import { nubeActiva } from './src/firebase';
 import { eliminarUsuario, escucharSesion, reautenticar, salir } from './src/cuenta';
 import { borrarNube, sincronizar } from './src/sync';
 import { cancelarRecordatorios, programarRecordatorios } from './src/notifications';
+import { detenerReportes, iniciarReportes, reportarError } from './src/reportes';
 import { color } from './src/theme';
 import Onboarding from './src/screens/Onboarding';
 import Hoy from './src/screens/Hoy';
@@ -65,6 +66,7 @@ export default function App() {
     } catch (e) {
       console.warn('[sincronizar]', e);
       const codigo = (e && e.code) || String((e && e.message) || e);
+      reportarError(e, (e && e.code) || 'sincronizar');
       setEstadoSync((s) => ({ ...s, estado: 'error', codigo }));
     } finally {
       sincronizando.current = false;
@@ -99,6 +101,13 @@ export default function App() {
   useEffect(() => {
     if (claveRecordatorios) programarRecordatorios(JSON.parse(claveRecordatorios));
   }, [claveRecordatorios]);
+
+  // El reporte de errores solo funciona mientras exista el consentimiento; al borrar los datos se detiene.
+  const consentido = Boolean(datos && datos.perfil && datos.perfil.consentimiento);
+  useEffect(() => {
+    if (consentido) iniciarReportes();
+    else detenerReportes();
+  }, [consentido]);
 
   // El botón "atrás" de Android cierra los flujos en vez de salir de la app.
   useEffect(() => {
