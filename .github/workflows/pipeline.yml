@@ -101,10 +101,18 @@ jobs:
       PROD_PROJECT_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
       PROD_APP_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_APP_ID }}
       PROD_MESSAGING_SENDER_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      # Reporte de errores (Sentry): el DSN y el proyecto no son secretos; el token sí (se usa solo al subir los mapas).
+      STG_SENTRY_DSN: ${{ vars.STG_SENTRY_DSN }}
+      STG_SENTRY_PROJECT: ${{ vars.STG_SENTRY_PROJECT }}
+      PROD_SENTRY_DSN: ${{ vars.PROD_SENTRY_DSN }}
+      PROD_SENTRY_PROJECT: ${{ vars.PROD_SENTRY_PROJECT }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
     steps:
       - uses: actions/checkout@v4
       - name: Elegir la configuración de Firebase (staging o producción)
         run: bash .github/scripts/elegir-firebase.sh
+      - name: Elegir la configuración del reporte de errores (Sentry)
+        run: bash .github/scripts/elegir-sentry.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -114,7 +122,19 @@ jobs:
         run: npx expo-doctor
         continue-on-error: true
       - name: Compilar versión web
-        run: npx expo export --platform web
+        run: npx expo export --platform web --source-maps
+      # Los mapas se suben a Sentry (se emparejan con cada paquete por su debug id) y se BORRAN antes de publicar:
+      # no deben quedar públicos en la web. Sin token (Pull Requests de ramas externas) solo se borran.
+      - name: Subir los source maps a Sentry y quitarlos de la versión web
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$EXPO_PUBLIC_SENTRY_DSN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
+            npx sentry-expo-upload-sourcemaps dist
+          else
+            echo "::notice::Sin token, DSN, organización o proyecto de Sentry: no se suben los source maps."
+          fi
+          find dist -name '*.map' -delete
       - name: Compilar paquete de Android
         run: npx expo export --platform android --output-dir dist-android
       - name: Guardar la versión web para descargarla
@@ -166,6 +186,11 @@ jobs:
       PROD_MESSAGING_SENDER_ID: ${{ vars.PROD_EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
       # "true" si el secret de Firebase existe (así el secret no se expone a los demás pasos).
       HAY_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_PROJECT_ID != '' }}
+      # Reporte de errores (Sentry), para que `vercel build` compile con la misma configuración.
+      STG_SENTRY_DSN: ${{ vars.STG_SENTRY_DSN }}
+      STG_SENTRY_PROJECT: ${{ vars.STG_SENTRY_PROJECT }}
+      PROD_SENTRY_DSN: ${{ vars.PROD_SENTRY_DSN }}
+      PROD_SENTRY_PROJECT: ${{ vars.PROD_SENTRY_PROJECT }}
     steps:
       - name: Aviso si no hay ningún proveedor configurado
         if: env.VERCEL_TOKEN == '' && env.HAY_FIREBASE != 'true'
@@ -174,6 +199,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Elegir la configuración de Firebase (staging o producción)
         run: bash .github/scripts/elegir-firebase.sh
+      - name: Elegir la configuración del reporte de errores (Sentry)
+        run: bash .github/scripts/elegir-sentry.sh
 
       # --- Google Firebase Hosting ---------------------------------------------
       # Publica exactamente la versión web que se compiló en la etapa 2.
