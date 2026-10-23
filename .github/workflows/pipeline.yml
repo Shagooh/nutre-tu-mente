@@ -128,6 +128,9 @@ jobs:
       - name: Subir los source maps a Sentry y quitarlos de la versión web
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Sin esta variable, el script de subida busca el plugin de Sentry en la configuración de Expo y falla.
+          # Región de datos: https://sentry.io/ (EE. UU.) o https://de.sentry.io/ (UE). Variable opcional SENTRY_URL.
+          SENTRY_URL: ${{ vars.SENTRY_URL || 'https://sentry.io/' }}
         run: |
           if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$EXPO_PUBLIC_SENTRY_DSN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
             npx sentry-expo-upload-sourcemaps dist

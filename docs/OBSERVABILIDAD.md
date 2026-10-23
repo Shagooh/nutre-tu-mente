@@ -34,6 +34,7 @@ identificadores largos que aparezcan en un mensaje de error. Está cubierto por 
    | Variable | Qué es |
    |---|---|
    | `SENTRY_ORG` | Slug de la organización |
+   | `SENTRY_URL` | Solo si elegiste la región de la UE: `https://de.sentry.io/`. Sin ella se usa `https://sentry.io/` (EE. UU.) |
    | `STG_SENTRY_DSN`, `STG_SENTRY_PROJECT` | DSN y slug del proyecto de staging |
    | `PROD_SENTRY_DSN`, `PROD_SENTRY_PROJECT` | DSN y slug del proyecto de producción |
 
