@@ -54,3 +54,5 @@ coverage/
 # variables locales con la configuracion de Firebase
 .env
 !.env.example
+
+.env.local
