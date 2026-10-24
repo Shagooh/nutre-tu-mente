@@ -1,6 +1,6 @@
 {
-  "name": "tareas-app",
-  "version": "1.0.0",
+  "name": "nutrimind-app",
+  "version": "1.0.1",
   "main": "index.js",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
