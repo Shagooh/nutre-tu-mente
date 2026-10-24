@@ -18,6 +18,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "nutre-tu-mente-staging",
+          "organization": "shagohs-company"
+        }
+      ]
+    ]
   }
 }

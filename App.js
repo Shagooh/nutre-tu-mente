@@ -20,6 +20,26 @@ import Lecciones from './src/screens/Lecciones';
 import Progreso from './src/screens/Progreso';
 import Ajustes from './src/screens/Ajustes';
 import Cuenta from './src/screens/Cuenta';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://2491f3662d1bdc07f5c59d5efbbba587@o4512298106093568.ingest.us.sentry.io/4512298185850880',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 const TABS = [
   { id: 'hoy', emoji: '🌿', texto: 'Hoy' },
@@ -28,7 +48,7 @@ const TABS = [
   { id: 'ajustes', emoji: '⚙️', texto: 'Ajustes' },
 ];
 
-export default function App() {
+export default Sentry.wrap(function App() {
   const { datos, actualizar, borrarTodo, vuelve, cerrarVuelve } = useStore();
   const [tab, setTab] = useState('hoy');
   const [modal, setModal] = useState(null); // 'checkin' | 'cuesta' | 'pausa' | 'cuenta'
@@ -277,7 +297,7 @@ export default function App() {
       <View style={{ flex: 1, backgroundColor: color.fondo }}>{contenido}</View>
     </SafeAreaProvider>
   );
-}
+});
 
 const s = StyleSheet.create({
   cargando: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: color.fondo },
