@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from './src/store';
 import { hoyISO } from './src/logic';
-import { aplicarSync, desvincular, hayPendientes, nuevoId, tocarPerfil } from './src/fusion';
+import { nuevoId, tocarPerfil } from './src/fusion';
+import { useNube } from './src/useNube';
 import { nubeActiva } from './src/firebase';
-import { eliminarUsuario, escucharSesion, reautenticar, salir } from './src/cuenta';
-import { borrarNube, sincronizar } from './src/sync';
-import { cancelarRecordatorios, programarRecordatorios } from './src/notifications';
-import { detenerReportes, iniciarReportes, reportarError } from './src/reportes';
+
+
+import { programarRecordatorios } from './src/notifications';
+import { detenerReportes, iniciarReportes } from './src/reportes';
 import { color } from './src/theme';
 import Onboarding from './src/screens/Onboarding';
 import Hoy from './src/screens/Hoy';
@@ -22,25 +23,6 @@ import Ajustes from './src/screens/Ajustes';
 import Cuenta from './src/screens/Cuenta';
 import * as Sentry from '@sentry/react-native';
 
-Sentry.init({
-  dsn: 'https://2491f3662d1bdc07f5c59d5efbbba587@o4512298106093568.ingest.us.sentry.io/4512298185850880',
-
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
-
-  // Enable Logs
-  enableLogs: true,
-
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
-
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
-});
-
 const TABS = [
   { id: 'hoy', emoji: '🌿', texto: 'Hoy' },
   { id: 'lecciones', emoji: '📖', texto: 'Lecciones' },
@@ -49,72 +31,12 @@ const TABS = [
 ];
 
 export default Sentry.wrap(function App() {
-  const { datos, actualizar, borrarTodo, vuelve, cerrarVuelve } = useStore();
+  const store = useStore();
+  const { datos, actualizar, vuelve, cerrarVuelve, error, reintentar } = store;
+  const { usuario, estadoSync, conflicto, sincronizarAhora, cerrarSesion, vincular, usarPerfilNube, recuperarCopiaLocal, borrar, eliminarCuenta } = useNube(store);
   const [tab, setTab] = useState('hoy');
   const [modal, setModal] = useState(null); // 'checkin' | 'cuesta' | 'pausa' | 'cuenta'
   const [leccionAbierta, setLeccionAbierta] = useState(null);
-
-  // --- Cuenta y nube (opcional: sin configuración de Firebase la app funciona solo en local) ---
-  const [usuario, setUsuario] = useState(null);
-  const [estadoSync, setEstadoSync] = useState({ estado: 'inactivo', cuando: null });
-  const [conflicto, setConflicto] = useState(false);
-  const datosRef = useRef(null);
-  datosRef.current = datos;
-  const sincronizando = useRef(false);
-
-  useEffect(() => escucharSesion(setUsuario), []);
-
-  const sincronizarAhora = useCallback(async () => {
-    const d = datosRef.current;
-    if (!nubeActiva || !usuario || !d || sincronizando.current) return;
-    // Datos de otra cuenta en este teléfono: no se mezclan (privacidad).
-    if (d.cuentaUid && d.cuentaUid !== usuario.uid) {
-      setConflicto(true);
-      await salir();
-      return;
-    }
-    sincronizando.current = true;
-    setEstadoSync((e) => ({ ...e, estado: 'sincronizando' }));
-    try {
-      const res = await sincronizar(usuario.uid, d);
-      actualizar((x) => ({
-        ...aplicarSync(x, res),
-        cuentaUid: usuario.uid,
-        ultimaSync: res.remoto.ultimaSync,
-      }));
-      setEstadoSync({ estado: 'ok', cuando: Date.now(), codigo: null });
-    } catch (e) {
-      console.warn('[sincronizar]', e);
-      const codigo = (e && e.code) || String((e && e.message) || e);
-      reportarError(e, (e && e.code) || 'sincronizar');
-      setEstadoSync((s) => ({ ...s, estado: 'error', codigo }));
-    } finally {
-      sincronizando.current = false;
-    }
-  }, [usuario, actualizar]);
-
-  // Al iniciar sesión: sincroniza.
-  useEffect(() => {
-    if (usuario) {
-      setConflicto(false);
-      sincronizarAhora();
-    }
-  }, [usuario]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Cuando hay algo nuevo sin subir: espera 2 s y sincroniza.
-  useEffect(() => {
-    if (!usuario || !datos || !hayPendientes(datos)) return;
-    const t = setTimeout(sincronizarAhora, 2000);
-    return () => clearTimeout(t);
-  }, [datos, usuario, sincronizarAhora]);
-
-  // Al volver a abrir la app: sincroniza.
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') sincronizarAhora();
-    });
-    return () => sub.remove();
-  }, [sincronizarAhora]);
 
   // Los recordatorios se programan siempre que cambian (también si llegan desde la nube).
   const claveRecordatorios = datos && datos.perfil ? JSON.stringify(datos.perfil.recordatorios) : '';
@@ -145,6 +67,7 @@ export default Sentry.wrap(function App() {
     return (
       <View style={s.cargando}>
         <ActivityIndicator color={color.primario} />
+        {error ? <><Text accessibilityRole="alert">{error}</Text><Pressable onPress={reintentar}><Text>Reintentar</Text></Pressable></> : null}
       </View>
     );
   }
@@ -162,28 +85,6 @@ export default Sentry.wrap(function App() {
 
   const cambiarRecordatorios = (recordatorios) => cambiarPerfil({ recordatorios });
 
-  // Borra todo lo local y, si hay sesión, también la copia en la nube.
-  // Si la nube no responde NO se borra nada (para no engañar sobre qué se eliminó).
-  const borrar = async () => {
-    if (usuario) {
-      await borrarNube(usuario.uid); // si falla, lanza el error y Ajustes lo muestra
-      await salir();
-    }
-    await cancelarRecordatorios();
-    await borrarTodo();
-    setTab('hoy');
-  };
-
-  const eliminarCuenta = async (clave) => {
-    const uid = usuario.uid;
-    await reautenticar(clave);
-    await borrarNube(uid);
-    await eliminarUsuario();
-    actualizar((d) => desvincular(d));
-    setEstadoSync({ estado: 'inactivo', cuando: null });
-    setModal(null);
-  };
-
   let contenido;
   if (modal === 'cuenta') {
     contenido = (
@@ -192,7 +93,9 @@ export default Sentry.wrap(function App() {
         estadoSync={estadoSync}
         conflicto={conflicto}
         onCerrar={() => setModal(null)}
-        onSalir={salir}
+        onSalir={cerrarSesion}
+        onVincular={vincular}
+        onUsarPerfilNube={usarPerfilNube}
         onSincronizar={sincronizarAhora}
         onEliminar={eliminarCuenta}
       />
@@ -294,7 +197,21 @@ export default Sentry.wrap(function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <View style={{ flex: 1, backgroundColor: color.fondo }}>{contenido}</View>
+      <View style={{ flex: 1, backgroundColor: color.fondo }}>
+        {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+        {usuario && datos.cuentaUid && usuario.uid !== datos.cuentaUid ? (
+          <View><Text>Este teléfono tiene datos de otra cuenta. Cierra la sesión para conservarlos sin mezclarlos.</Text><Pressable onPress={cerrarSesion}><Text>Cerrar sesión</Text></Pressable></View>
+        ) : datos.borrado && modal !== 'cuenta' ? (
+          <View>
+            <Text>Hay un borrado pendiente. Tus datos no se sincronizarán hasta terminarlo.</Text>
+            <Pressable onPress={() => datos.borrado.tipo === 'cuenta' ? setModal('cuenta') : borrar().catch(() => { /* El marcador durable mantiene visible el borrado pendiente. */ })}><Text>Reanudar borrado</Text></Pressable>
+            {!usuario && datos.borrado.tipo === 'cuenta' && datos.borrado.fase === 'local' ? <>
+              <Text>La copia remota ya se borró. Si no puedes volver a entrar, conserva la copia local sin vincularla y revisa después el estado de tu cuenta.</Text>
+              <Pressable onPress={() => recuperarCopiaLocal().catch(() => { /* El aviso global muestra el fallo de disco. */ })}><Text>Conservar copia local y revisar cuenta después</Text></Pressable>
+            </> : null}
+          </View>
+        ) : contenido}
+      </View>
     </SafeAreaProvider>
   );
 });

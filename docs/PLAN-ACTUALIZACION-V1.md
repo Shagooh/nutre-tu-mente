@@ -76,6 +76,8 @@ Este plan no archiva ni marca como terminados esos cambios. No amplía automáti
 
 ## Verificación de esta preparación (2026-11-07)
 
+Actualización posterior: los grupos 1–4 se implementaron en la misma rama. Evidencia y límites actuales en [BASE-SEGURA.md](BASE-SEGURA.md). Los resultados siguientes describen la preparación inicial, no el estado final de las herramientas.
+
 - `npm ci --no-audit --no-fund`: completado; avisos de engine de Firebase con Node 22.22.2 y dependencias obsoletas. Sin modificación del lockfile.
 - `npm test -- --ci --runInBand`: 3 suites, 62 pruebas, todas pasan. Son las pruebas heredadas; no certifican el comportamiento nuevo propuesto.
 - OpenSpec 1.14.3 `validate --all --strict --no-interactive`: 4 elementos válidos, cero fallos.

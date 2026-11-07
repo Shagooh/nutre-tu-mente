@@ -23,35 +23,23 @@ export function limpiarTexto(texto) {
 // Última barrera de privacidad: se ejecuta sobre cada evento justo antes de enviarlo.
 export function filtrarEvento(evento) {
   if (!evento) return null;
-  const e = { ...evento };
-
-  delete e.user;
-  delete e.request;
-  delete e.server_name;
-  delete e.breadcrumbs;
-  delete e.extra;
-  delete e.modules;
-
-  e.message = limpiarTexto(e.message);
-  if (e.logentry) e.logentry = { ...e.logentry, message: limpiarTexto(e.logentry.message) };
-  if (e.exception && Array.isArray(e.exception.values)) {
-    e.exception = {
-      ...e.exception,
-      values: e.exception.values.map((v) => ({ ...v, value: limpiarTexto(v.value) })),
-    };
-  }
-  if (e.contexts) {
-    // El nombre del dispositivo suele llevar el de la persona ("iPhone de Ana").
-    const { device, ...resto } = e.contexts;
-    e.contexts = device ? { ...resto, device: { ...device, name: undefined } } : resto;
-  }
-  // Etiquetas: solo las técnicas que ponemos nosotros.
-  if (e.tags) {
-    const { plataforma, codigo } = e.tags;
-    e.tags = { plataforma, codigo };
-  }
+  const codigo = codigoSeguro(evento.tags?.codigo);
+  const e = {
+    event_id: evento.event_id, timestamp: evento.timestamp, level: evento.level,
+    platform: evento.platform, release: evento.release, environment: evento.environment,
+    message: codigo,
+    exception: { values: [{ type: 'Error', value: codigo }] },
+    tags: { codigo },
+  };
   return e;
 }
+
+const CODIGOS = new Set(['unavailable', 'permission-denied', 'sincronizar', 'storage', 'sync/conflict', 'sync/profile-conflict', 'sync/deleting', 'sync/generation', 'desconocido']);
+export const codigoSeguro = (codigo) => CODIGOS.has(codigo) ? codigo : 'desconocido';
+
+/* El filtro usa una lista de campos permitidos. No se reenvían mensajes,
+ * contextos o stacks con valores arbitrarios, tampoco para errores no controlados. */
+
 
 // Configuración que se pasa al SDK. Es una función pura para poder comprobarla en las pruebas.
 export function opcionesReportes({ dsn, entorno, release = version }) {
@@ -104,7 +92,7 @@ export function iniciarReportes({
     }
     activo = true;
     return true;
-  } catch (e) {
+  } catch {
     // Un fallo del servicio de reportes nunca debe afectar a la app.
     return false;
   }
@@ -123,14 +111,14 @@ export function reportesActivos() {
 export function reportarError(error, codigo) {
   if (!activo) return;
   try {
-    const nombre = (error && error.name) || 'Error';
-    const aviso = new Error(`${nombre}: ${codigo || (error && error.code) || 'desconocido'}`);
+    const seguro = codigoSeguro(codigo || (error && error.code));
+    const aviso = new Error(seguro);
     aviso.name = 'ErrorReportado';
     Sentry.withScope((scope) => {
-      scope.setTag('codigo', String(codigo || (error && error.code) || 'desconocido'));
+      scope.setTag('codigo', seguro);
       Sentry.captureException(aviso);
     });
-  } catch (e) {
+  } catch {
     // Ignorar: no se puede reportar el fallo de reportar.
   }
 }

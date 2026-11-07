@@ -1,9 +1,12 @@
 // Lógica pura (sin Firebase) para fusionar los datos del teléfono con los de la nube.
 // Regla de oro: nunca se pierde nada. Los registros se identifican por "id" y no se editan.
 
-export const COLECCIONES = ['checkins', 'cuestas', 'mental'];
+// Expo Crypto está disponible también en Expo Go. Los IDs se persisten antes de sync.
+import { randomUUID } from 'expo-crypto';
+import { fusionarPerfil } from './contratos-sync';
 
-export const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+export const COLECCIONES = ['checkins', 'cuestas', 'mental'];
+export const nuevoId = () => randomUUID();
 
 const clave = (it) => `${it.fecha || ''} ${it.hora || ''} ${it.id}`;
 
@@ -28,7 +31,7 @@ export const hayPendientes = (d) =>
   !!d.perfilSucio || COLECCIONES.some((col) => (d[col] || []).some((it) => !it._s));
 
 // Marca perfil/lecciones/retornos como pendientes de subir.
-export const tocarPerfil = () => ({ perfilActualizado: new Date().toISOString(), perfilSucio: true });
+export const tocarPerfil = () => ({ perfilActualizado: new Date().toISOString(), perfilOperacion: nuevoId(), perfilSucio: true });
 
 export function fusionar(local, remoto) {
   const salida = { ...local };
@@ -71,16 +74,25 @@ export function aplicarSync(d, { remoto, subidos, perfilSubido }) {
     const ids = new Set(subidos[col] || []);
     marcado[col] = (d[col] || []).map((it) => (ids.has(it.id) ? { ...it, _s: true } : it));
   });
-  if (perfilSubido && d.perfilActualizado === perfilSubido.perfilActualizado) {
+  if (perfilSubido && (perfilSubido.operacion ? d.perfilOperacion === perfilSubido.operacion : d.perfilActualizado === perfilSubido.perfilActualizado)) {
     marcado.perfilSucio = false;
   }
-  return fusionar(marcado, remoto);
+  const salida = fusionar(marcado, remoto);
+  if (remoto.perfil) {
+    const base = perfilSubido?.local || d.perfilBase;
+    const pendiente = d.perfilSucio && (!perfilSubido || (perfilSubido.operacion ? d.perfilOperacion !== perfilSubido.operacion : d.perfilActualizado !== perfilSubido.perfilActualizado));
+    salida.perfil = pendiente ? fusionarPerfil(base, d.perfil, remoto.perfil) : remoto.perfil;
+    salida.perfilBase = remoto.perfil;
+    salida.perfilRevision = remoto.revision || 0;
+    salida.perfilSucio = Boolean(pendiente);
+  }
+  return salida;
 }
 
 // Al eliminar la cuenta, los datos locales quedan "sin nube": si luego crea otra cuenta,
 // todo se vuelve a subir. Devuelve solo los campos que cambian.
 export function desvincular(d) {
-  const cambios = { cuentaUid: null, ultimaSync: null, perfilSucio: !!d.perfil };
+  const cambios = { cuentaUid: null, ultimaSync: null, perfilSucio: !!d.perfil, perfilBase: null, perfilRevision: 0, nubeGeneracion: null, requiereVincular: true, borrado: null };
   COLECCIONES.forEach((col) => {
     cambios[col] = (d[col] || []).map(({ _s, ...resto }) => resto);
   });

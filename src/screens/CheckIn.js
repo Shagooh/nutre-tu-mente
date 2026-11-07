@@ -10,12 +10,18 @@ export default function CheckIn({ onGuardar, onCerrar }) {
   const [necesidades, setNecesidades] = useState([]);
   const [cuidado, setCuidado] = useState('');
   const [listo, setListo] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
 
   const alternar = (id) =>
     setNecesidades((n) => (n.includes(id) ? n.filter((x) => x !== id) : [...n, id]));
 
-  const guardar = () => {
-    onGuardar({
+  const guardar = async () => {
+    if (guardando) return;
+    setGuardando(true);
+    setError('');
+    try {
+    await onGuardar({
       fecha: hoyISO(),
       hora: new Date().toTimeString().slice(0, 5),
       animo,
@@ -23,6 +29,9 @@ export default function CheckIn({ onGuardar, onCerrar }) {
       cuidado: cuidado.trim(),
     });
     setListo(true);
+    } catch {
+      setError('No pudimos guardar. Tus respuestas siguen aquí. Intenta otra vez.');
+    } finally { setGuardando(false); }
   };
 
   const sugerencias = NECESIDADES.filter((n) => necesidades.includes(n.id));
@@ -96,7 +105,8 @@ export default function CheckIn({ onGuardar, onCerrar }) {
           maxLength={280}
         />
 
-        <Boton titulo="Guardar" onPress={guardar} disabled={!animo} style={{ marginTop: 18 }} />
+        {error ? <Texto accessibilityRole="alert">{error}</Texto> : null}
+        <Boton titulo={guardando ? 'Guardando…' : 'Guardar'} onPress={guardar} disabled={!animo || guardando} style={{ marginTop: 18 }} />
       </KeyboardAvoidingView>
     </Pantalla>
   );

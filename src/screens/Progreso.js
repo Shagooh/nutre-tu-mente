@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Planta from '../components/Planta';
 import { Boton, Escala, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
-import { cambioCalma, diasDesde, hoyISO, logros, puntos, ultimos7 } from '../logic';
+import { cambioCalma, diasDesde, logros, puntos, ultimos7 } from '../logic';
 import { color } from '../theme';
 import { useState } from 'react';
 

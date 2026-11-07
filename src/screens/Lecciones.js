@@ -8,6 +8,8 @@ export default function Lecciones({ datos, abrirId, onLeida }) {
   const [abierta, setAbierta] = useState(abrirId || null);
 
   useEffect(() => {
+    // La selección externa debe reemplazar la lección abierta desde esta pantalla.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (abrirId) setAbierta(abrirId);
   }, [abrirId]);
 

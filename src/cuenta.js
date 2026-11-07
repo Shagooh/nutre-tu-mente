@@ -28,10 +28,15 @@ export const salir = () => (nubeActiva ? signOut(auth) : Promise.resolve());
 export const recuperar = (email) => sendPasswordResetEmail(auth, email.trim());
 
 // Para borrar la cuenta Firebase exige una contraseña reciente.
-export async function reautenticar(clave) {
+export async function reautenticar(clave, uid = auth.currentUser?.uid) {
   const u = auth.currentUser;
+  if (!u || u.uid !== uid) throw Object.assign(new Error('sync/session-required'), { code: 'sync/session-required' });
   const credencial = EmailAuthProvider.credential(u.email, clave);
   await reauthenticateWithCredential(u, credencial);
 }
 
-export const eliminarUsuario = () => deleteUser(auth.currentUser);
+export const eliminarUsuario = (uid = auth.currentUser?.uid) => {
+  const usuario = auth.currentUser;
+  if (!usuario || usuario.uid !== uid) throw Object.assign(new Error('sync/session-required'), { code: 'sync/session-required' });
+  return deleteUser(usuario);
+};

@@ -25,17 +25,17 @@ options:
 
 steps:
   - id: instalar
-    name: node:22
+    name: node:24.12.0
     entrypoint: npm
     args: ['ci']
 
   - id: probar
-    name: node:22
+    name: node:24.12.0
     entrypoint: npm
     args: ['test', '--', '--ci']
 
   - id: compilar
-    name: node:22
+    name: node:24.12.0
     entrypoint: npx
     args: ['expo', 'export', '--platform', 'web']
     env:
@@ -48,7 +48,7 @@ steps:
       - 'EXPO_PUBLIC_ENTORNO=${_ENTORNO}'
 
   - id: publicar
-    name: node:22
+    name: node:24.12.0
     entrypoint: bash
     args:
       - -c

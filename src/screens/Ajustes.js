@@ -126,7 +126,7 @@ export default function Ajustes({
                 setErrorBorrar('');
                 try {
                   await onBorrar();
-                } catch (e) {
+                } catch {
                   setErrorBorrar('No pudimos borrar tu copia en la nube (¿sin conexión?). No se borró nada. Inténtalo con internet.');
                 }
               }}

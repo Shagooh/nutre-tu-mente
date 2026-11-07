@@ -5,7 +5,7 @@ import { SLOTS } from './content';
 function modulo() {
   try {
     return require('expo-notifications');
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -41,7 +41,7 @@ export async function programarRecordatorios(recordatorios) {
       });
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -50,5 +50,8 @@ export async function cancelarRecordatorios() {
   const N = modulo();
   try {
     if (N) await N.cancelAllScheduledNotificationsAsync();
-  } catch (e) {}
+  } catch {
+    // Sin módulo o permiso de notificación no hay nada más que cancelar.
+    return false;
+  }
 }

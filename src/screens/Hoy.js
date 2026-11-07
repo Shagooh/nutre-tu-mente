@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import Planta from '../components/Planta';
 import { Boton, Pantalla, Tarjeta, Texto } from '../components/ui';
 import { LECCIONES, OBJETIVOS } from '../content';

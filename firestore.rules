@@ -21,45 +21,113 @@ service cloud.firestore {
     function fechaValida(v) {
       return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
     }
+    function horaValida(d) {
+      return !('hora' in d) || (d.hora is string && d.hora.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'));
+    }
     function esAhora(d) {
       // Obliga a usar la hora del servidor (serverTimestamp), no una fecha inventada.
       return d.actualizado == request.time;
     }
+    function activo(uid) {
+      return get(/databases/$(database)/documents/syncControls/$(uid)).data.estado == 'activo';
+    }
+    function generacionValida(uid, d) {
+      return activo(uid) && d.generacion == get(/databases/$(database)/documents/syncControls/$(uid)).data.generacion;
+    }
+    function recordatorio(r) {
+      return r is map && r.keys().hasOnly(['id', 'h', 'm', 'activo'])
+        && r.id in ['manana', 'mediodia', 'tarde', 'noche']
+        && r.h is int && r.h >= 0 && r.h <= 23
+        && r.m is int && r.m >= 0 && r.m <= 59 && r.activo is bool;
+    }
+    function recordatorios(rs) {
+      return rs is list && rs.size() <= 4
+        && (rs.size() < 1 || recordatorio(rs[0]))
+        && (rs.size() < 2 || recordatorio(rs[1]))
+        && (rs.size() < 3 || recordatorio(rs[2]))
+        && (rs.size() < 4 || recordatorio(rs[3]));
+    }
+    function opcionalTexto(p, key, max) {
+      return !(key in p) || p[key] == null || texto(p[key], max);
+    }
+    match /syncControls/{uid} {
+      allow read: if esDueno(uid);
+      allow create: if esDueno(uid)
+        && request.resource.data.keys().hasOnly(['estado', 'generacion', 'operacion'])
+        && request.resource.data.estado in ['activo', 'eliminando']
+        && texto(request.resource.data.generacion, 80)
+        && (request.resource.data.operacion == null || texto(request.resource.data.operacion, 80));
+      allow update: if esDueno(uid)
+        && request.resource.data.keys().hasOnly(['estado', 'generacion', 'operacion'])
+        && texto(request.resource.data.generacion, 80)
+        && (request.resource.data.operacion == null || texto(request.resource.data.operacion, 80))
+        && ((resource.data.estado == 'activo' && request.resource.data.estado == 'eliminando' && request.resource.data.generacion == resource.data.generacion)
+          || (resource.data.estado == 'eliminando' && request.resource.data.estado == 'borrado' && request.resource.data.generacion == resource.data.generacion && request.resource.data.operacion == resource.data.operacion)
+          || (resource.data.estado == 'borrado' && request.resource.data.estado == 'activo' && request.resource.data.generacion != resource.data.generacion && request.resource.data.operacion == null));
+      allow delete: if false;
+    }
 
     match /users/{uid} {
-      allow read, delete: if esDueno(uid);
+      allow read: if esDueno(uid);
+      allow delete: if esDueno(uid) && !activo(uid);
       allow create, update: if esDueno(uid)
-        && request.resource.data.keys().hasOnly(['perfil', 'retornos', 'lecciones', 'perfilActualizado', 'actualizado'])
+        && generacionValida(uid, request.resource.data)
+        && request.resource.data.keys().hasOnly(['perfil', 'retornos', 'lecciones', 'perfilActualizado', 'actualizado', 'generacion', 'revision', 'ultimaOperacion'])
+        && (!('ultimaOperacion' in request.resource.data) || request.resource.data.ultimaOperacion == null || texto(request.resource.data.ultimaOperacion, 80))
+        && request.resource.data.revision is int && request.resource.data.revision >= 1
+        && ((!exists(/databases/$(database)/documents/users/$(uid)) || !('revision' in resource.data)) || request.resource.data.revision == resource.data.revision + 1)
         && request.resource.data.perfil is map
         && request.resource.data.perfil.keys().hasOnly(['nombre', 'objetivo', 'momento', 'estilo', 'flor', 'recordatorios', 'consentimiento', 'creado'])
         && texto(request.resource.data.perfil.nombre, 60)
+        && recordatorios(request.resource.data.perfil.recordatorios)
+        && opcionalTexto(request.resource.data.perfil, 'objetivo', 40)
+        && opcionalTexto(request.resource.data.perfil, 'momento', 40)
+        && opcionalTexto(request.resource.data.perfil, 'estilo', 40)
+        && opcionalTexto(request.resource.data.perfil, 'flor', 40)
+        && opcionalTexto(request.resource.data.perfil, 'consentimiento', 10)
+        && opcionalTexto(request.resource.data.perfil, 'creado', 10)
         && request.resource.data.retornos is int
         && request.resource.data.lecciones is list
         && request.resource.data.lecciones.size() <= 50
+        && request.resource.data.lecciones.hasOnly(['hambre-emocional', 'comer-presente', 'sin-juicio', 'hambre-saciedad', 'pausa'])
         && texto(request.resource.data.perfilActualizado, 40)
         && esAhora(request.resource.data);
 
       // Check-ins diarios
+      match /{col}/{id} {
+        // Solo una migración de metadatos para registros anteriores a generaciones.
+        allow update: if esDueno(uid) && col in ['checkins', 'cuestas', 'mental']
+          && !('generacion' in resource.data)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['generacion']);
+      }
       match /checkins/{id} {
-        allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado'])
+        allow read: if esDueno(uid);
+        allow delete: if esDueno(uid) && !activo(uid);
+        allow create: if esDueno(uid)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado', 'generacion'])
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
+          && horaValida(request.resource.data)
           && escala(request.resource.data.animo)
           && request.resource.data.necesidades is list
           && request.resource.data.necesidades.size() <= 10
+          && request.resource.data.necesidades.hasOnly(['descanso', 'calma', 'compania', 'moverme', 'agua', 'espacio', 'desahogo', 'comer'])
           && (!('cuidado' in request.resource.data) || texto(request.resource.data.cuidado, 280))
           && esAhora(request.resource.data);
       }
 
       // Usos del botón "Me está costando"
       match /cuestas/{id} {
-        allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'calmaAntes', 'calmaDespues', 'respiro', 'hambre', 'necesidad', 'trato', 'actualizado'])
+        allow read: if esDueno(uid);
+        allow delete: if esDueno(uid) && !activo(uid);
+        allow create: if esDueno(uid)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'calmaAntes', 'calmaDespues', 'respiro', 'hambre', 'necesidad', 'trato', 'actualizado', 'generacion'])
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
+          && horaValida(request.resource.data)
           && (!('calmaAntes' in request.resource.data) || escala(request.resource.data.calmaAntes))
           && (!('calmaDespues' in request.resource.data) || escala(request.resource.data.calmaDespues))
           && (!('respiro' in request.resource.data) || request.resource.data.respiro is bool)
@@ -71,9 +139,11 @@ service cloud.firestore {
 
       // Espacio mental (pregunta mensual)
       match /mental/{id} {
-        allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'valor', 'actualizado'])
+        allow read: if esDueno(uid);
+        allow delete: if esDueno(uid) && !activo(uid);
+        allow create: if esDueno(uid)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'valor', 'actualizado', 'generacion'])
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
           && escala(request.resource.data.valor)

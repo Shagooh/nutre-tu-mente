@@ -4,33 +4,33 @@ Cada tarea está acotada a 2 horas como máximo; dividir si la ejecución revela
 
 ## 1. Runtime y comprobaciones
 
-- [ ] 1.1 Resolver Node 22 frente al requisito >=24.12 de Firebase, documentar versión compatible local/CI y verificar instalación y Jest sin advertencias de engine (2 h).
-- [ ] 1.2 Configurar ESLint para JavaScript con hooks y no-empty; verificar `npx expo lint` sin instalación implícita y documentar problemas heredados (2 h).
-- [ ] 1.3 Configurar comprobación JS gradual sin conversión masiva; verificar `npx tsc --noEmit` sobre módulos de dominio incluidos y documentar alcance (2 h).
+- [x] 1.1 Resolver Node 22 frente al requisito >=24.12 de Firebase, documentar versión compatible local/CI y verificar instalación y Jest sin advertencias de engine (2 h).
+- [x] 1.2 Configurar ESLint para JavaScript con hooks y no-empty; verificar `npx expo lint` sin instalación implícita y documentar problemas heredados (2 h).
+- [x] 1.3 Configurar comprobación JS gradual sin conversión masiva; verificar `npx tsc --noEmit` sobre módulos de dominio incluidos y documentar alcance (2 h).
 
 ## 2. Reportes y guardado seguro
 
-- [ ] 2.1 Quitar inicialización alternativa de Sentry y conservar un módulo controlado; probar importación de App antes de consentimiento y después del borrado, coordinar con el cambio Sentry abierto (2 h).
-- [ ] 2.2 Restringir reportes a códigos técnicos y verificar con errores que contienen notas, correo e IDs que no se transmiten textos clínicos ni replay (2 h).
-- [ ] 2.3 Modelar error de lectura sin escritura automática; probar JSON inválido, rechazo de getItem y reintento conservando el blob (2 h).
-- [ ] 2.4 Serializar escrituras y devolver confirmación durable; probar fallo y orden invertido de promesas, documentar contrato de actualizar (2 h).
-- [ ] 2.5 Hacer que check-in y cierre de cuesta esperen persistencia, conservando formulario al fallar; verificar interacción con almacenamiento rechazado y `npm test` (2 h).
+- [x] 2.1 Quitar inicialización alternativa de Sentry y conservar un módulo controlado; probar importación de App antes de consentimiento y después del borrado, coordinar con el cambio Sentry abierto (2 h).
+- [x] 2.2 Restringir reportes a códigos técnicos y verificar con errores que contienen notas, correo e IDs que no se transmiten textos clínicos ni replay (2 h).
+- [x] 2.3 Modelar error de lectura sin escritura automática; probar JSON inválido, rechazo de getItem y reintento conservando el blob (2 h).
+- [x] 2.4 Serializar escrituras y devolver confirmación durable; probar fallo y orden invertido de promesas, documentar contrato de actualizar (2 h).
+- [x] 2.5 Hacer que check-in y cierre de cuesta esperen persistencia, conservando formulario al fallar; verificar interacción con almacenamiento rechazado y `npm test` (2 h).
 
 ## 3. Cuentas y sincronización
 
-- [ ] 3.1 Añadir pruebas con Firebase Emulator Suite para usuario A, B y anónimo, sin usar producción; verificar rechazos cruzados y documentar comando reproducible (2 h).
-- [ ] 3.2 Cercar operaciones por UID y generación, atender sesión restaurada antes de cargar datos; probar respuesta tardía tras salir/cambiar cuenta o empezar borrado (2 h).
-- [ ] 3.3 Mantener identidad estable de operaciones pendientes tras reinicio; verificar recuperación de la misma operación sin duplicados (2 h).
-- [ ] 3.4 Implementar comparación de registros inmutables y reglas correspondientes; verificar respuesta perdida, reintento idéntico y conflicto de contenido sin sobrescritura (2 h).
-- [ ] 3.5 Incorporar revisión de perfil y conflicto visible; probar dos dispositivos editando el mismo campo y campos disjuntos, documentar contrato (2 h).
+- [x] 3.1 Añadir pruebas con Firebase Emulator Suite para usuario A, B y anónimo, sin usar producción; verificar rechazos cruzados y documentar comando reproducible (2 h).
+- [x] 3.2 Cercar operaciones por UID y generación, atender sesión restaurada antes de cargar datos; probar respuesta tardía tras salir/cambiar cuenta o empezar borrado (2 h).
+- [x] 3.3 Mantener identidad estable de operaciones pendientes tras reinicio; verificar recuperación de la misma operación sin duplicados (2 h).
+- [x] 3.4 Implementar comparación de registros inmutables y reglas correspondientes; verificar respuesta perdida, reintento idéntico y conflicto de contenido sin sobrescritura (2 h).
+- [x] 3.5 Incorporar revisión de perfil y conflicto visible; probar dos dispositivos editando el mismo campo y campos disjuntos, documentar contrato (2 h).
 
 ## 4. Borrado recuperable
 
-- [ ] 4.1 Precisar el ciclo de barrera remota y reinicio de datos con cuenta conservada; verificar diagrama y escenarios concurrentes revisados antes de codificar (1 h).
-- [ ] 4.2 Persistir fase e identidad de borrado y detener sync; probar cierre de app y fallo entre lotes con reanudación (2 h).
-- [ ] 4.3 Implementar barrera y reglas para impedir resubida desde otro dispositivo; verificar con emulador creación rechazada durante borrado (2 h).
-- [ ] 4.4 Diferenciar borrar todo y eliminar cuenta conservando copia local; probar reautenticación, fallos remotos y confirmación explícita antes de vincular otra cuenta (2 h).
-- [ ] 4.5 Ejecutar integración de grupos 1–4 y documentar límites; verificar Jest, emulador, lint, comprobación JS y ninguna modificación remota de producción (2 h).
+- [x] 4.1 Precisar el ciclo de barrera remota y reinicio de datos con cuenta conservada; verificar diagrama y escenarios concurrentes revisados antes de codificar (1 h).
+- [x] 4.2 Persistir fase e identidad de borrado y detener sync; probar cierre de app y fallo entre lotes con reanudación (2 h).
+- [x] 4.3 Implementar barrera y reglas para impedir resubida desde otro dispositivo; verificar con emulador creación rechazada durante borrado (2 h).
+- [x] 4.4 Diferenciar borrar todo y eliminar cuenta conservando copia local; probar reautenticación, fallos remotos y confirmación explícita antes de vincular otra cuenta (2 h).
+- [x] 4.5 Ejecutar integración de grupos 1–4 y documentar límites; verificar Jest, emulador, lint, comprobación JS y ninguna modificación remota de producción (2 h).
 
 ## 5. Contratos y contenido
 

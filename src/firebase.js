@@ -30,9 +30,11 @@ if (nubeActiva) {
       Platform.OS === 'web'
         ? FirebaseAuth.initializeAuth(app, { persistence: FirebaseAuth.browserLocalPersistence })
         : FirebaseAuth.initializeAuth(app, {
+            // Metro resuelve la exportación react-native; el resolver de ESLint ve la variante web.
+            // eslint-disable-next-line import/namespace
             persistence: FirebaseAuth.getReactNativePersistence(AsyncStorage),
           });
-  } catch (e) {
+  } catch {
     // Con la recarga en caliente (fast refresh) Auth ya puede estar inicializado.
     auth = FirebaseAuth.getAuth(app);
   }

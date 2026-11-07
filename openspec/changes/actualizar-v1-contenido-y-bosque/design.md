@@ -28,7 +28,7 @@ Cada operación captura UID y generación de sesión/almacenamiento; verificar a
 
 ### 4. Borrado con estado persistente
 
-Guardar una operación de borrado con ID estable y fase; detener subidas. En nube usar un estado de eliminación bajo el propietario que impida crear o actualizar datos mientras se eliminan subcolecciones, mediante reglas. Borrar lotes reanudables; conservar la barrera hasta finalizar. No declarar atómico el conjunto de lotes. Solo después del remoto confirmado vaciar local. Eliminar cuenta conserva el teléfono como hoy se informa, pero exige confirmación explícita antes de asociar esa copia a otra cuenta. Probar que otro dispositivo no reenvíe datos durante el borrado. La retención o liberación de la barrera de borrado de datos con cuenta conservada debe quedar definida en el PR técnico antes de activarlo.
+Guardar una operación de borrado con ID estable y fase; detener subidas. En nube usar `syncControls/{uid}` con estado activo, eliminando o borrado y generación. Las reglas impiden crear o actualizar datos durante los lotes de borrado reanudables. La barrera permanece en borrado tras confirmar eliminación de registros y perfil; solo una confirmación explícita puede activarla con otra generación, invalidando dispositivos antiguos. No declarar atómico el conjunto de lotes. Solo después del remoto confirmado vaciar local. Eliminar cuenta conserva el teléfono como hoy se informa, pero exige confirmación explícita antes de asociar esa copia a otra cuenta. Si se pierde la sesión tras eliminar la nube, permitir conservar explícitamente la copia local desvinculada sin declarar éxito de eliminación de identidad. Ver ciclo y recuperación en `docs/BASE-SEGURA.md`.
 
 ### 5. Telemetría por un único módulo
 
