@@ -39,6 +39,8 @@ Un PR por tarea o conjunto pequeño; ejecutar pruebas al cerrar cada grupo. No c
 
 ## Jardín acordado y puntos pendientes
 
+Para las pruebas visuales usamos el [roble provisional sin rostro](../assets/pruebas/roble/vista-previa.html). Sus cinco SVG muestran 0, 1, 2, 3 y 5 hojas verdaderas, respectivamente. Son muestras para revisar el crecimiento mientras llega la serie de 30 fotogramas de la diseñadora.
+
 - Especies: Araucaria, Quillay, Cerezo, Sauce, Olivo y Jacarandá.
 - Máximo una hoja por fecha con check-in; color según emoción; gana la mayor intensidad del día.
 - Confirmado el 2026-11-07: los 30 SVG son para un roble de prueba; el primero es la semilla antes del primer check-in. Índice visual `min(días con check-in, 29)` sobre recursos 0–29: semilla con cero días, adulto desde el día 29; días 30 y 31 suman hojas sin otro fotograma. Las ausencias conservan el estado.
