@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Boton, Chip, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
 import { ANIMOS, NECESIDADES } from '../content';
-import { hoyISO } from '../logic';
+import { relojBosque } from '../reloj-bosque';
 import { color } from '../theme';
 
 export default function CheckIn({ onGuardar, onCerrar }) {
@@ -22,8 +22,7 @@ export default function CheckIn({ onGuardar, onCerrar }) {
     setError('');
     try {
     await onGuardar({
-      fecha: hoyISO(),
-      hora: new Date().toTimeString().slice(0, 5),
+      ...relojBosque.capturar(),
       animo,
       necesidades,
       cuidado: cuidado.trim(),
@@ -42,7 +41,7 @@ export default function CheckIn({ onGuardar, onCerrar }) {
         <Text style={s.hero}>🌿</Text>
         <Titulo style={{ textAlign: 'center' }}>Gracias por detenerte</Titulo>
         <Texto style={{ textAlign: 'center', marginBottom: 20 }}>
-          Escucharte ya es una forma de cuidarte. Tu planta creció un poquito.
+          Escucharte ya es una forma de cuidarte.
         </Texto>
         {sugerencias[0] ? (
           <Tarjeta tono="verde">

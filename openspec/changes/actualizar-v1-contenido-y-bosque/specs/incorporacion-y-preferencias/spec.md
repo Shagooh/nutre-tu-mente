@@ -6,6 +6,21 @@ Presentar el acompañamiento y recoger solo las respuestas necesarias respetando
 
 ## ADDED Requirements
 
+### Requirement: Entrega provisional de bienvenida y roble
+Por autorización de producto del 11-11-2026, la entrega intermedia SHALL presentar las cuatro bienvenidas del documento como contenido en revisión y la bellota del laboratorio de roble como única especie provisional del onboarding. SHALL conservar las preguntas históricas hasta aprobar el diagnóstico nuevo y su ampliación de datos. Esta entrega MUST NOT declararse incorporación V1 completa.
+
+#### Scenario: Elegir la bellota provisional
+- **WHEN** termina las preguntas existentes y elige el árbol
+- **THEN** ve únicamente Roble, sin flores ni especies sin recurso, y puede finalizar sin cuenta ni red
+
+#### Scenario: Conservar elección al guardar
+- **WHEN** confirma Empezar
+- **THEN** se guarda roble en el campo histórico de especie `perfil.flor`, se espera la persistencia y un fallo conserva el formulario para reintentar; Inicio, Progreso y Ajustes muestran esa bellota sin convertirla en girasol
+
+#### Scenario: Compatibilidad de perfiles previos
+- **WHEN** abre un perfil que ya tenía una flor
+- **THEN** conserva esa elección sin migración automática a roble ni repetición forzada del onboarding
+
 ### Requirement: Recorrido inicial
 El sistema SHALL seguir las secciones 1–6 del contenido: cuatro bienvenidas saltables, consentimiento obligatorio, diagnóstico, nombre y resultado, preferencias, notificaciones, funciones y elección de árbol; SHALL permitir terminar sin cuenta ni red.
 

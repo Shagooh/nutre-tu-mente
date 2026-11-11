@@ -1,4 +1,6 @@
 import { sincronizar, borrarNube } from '../sync';
+import { relojBosque, diaConfirmado } from '../reloj-bosque';
+import { aplicarSync } from '../fusion';
 import { datosVacios } from '../store';
 let mockDocs, mockPerderRespuesta, mockFallarLote;
 let mockReloj = 0;
@@ -7,7 +9,7 @@ jest.mock('firebase/firestore', () => {
   const snap = (ref) => ({ exists: () => mockDocs.has(ref), data: () => mockDocs.get(ref), ref });
   return {
     doc: (_db, ...p) => p.join('/'), collection: (_db, ...p) => p.join('/'),
-    serverTimestamp: () => ++mockReloj,
+    serverTimestamp: () => { const ms = Date.UTC(2026, 10, 11, 12) + ++mockReloj; return { toMillis: () => ms }; },
     getDoc: async (ref) => snap(ref),
     getDocs: async (ref) => {
       const docs = [...mockDocs.keys()].filter((key) => key.startsWith(ref + '/') && key.split('/').length === ref.split('/').length + 1).map((key) => ({ ...snap(key), id: key.split('/').pop() }));
@@ -81,4 +83,26 @@ test('borrado con fallo tras primer lote se reanuda, sin soltar barrera', async 
   expect(mockDocs.get('syncControls/A')).toMatchObject({ estado: 'borrado', operacion: op.id });
   await borrarNube('A', op);
   expect([...mockDocs.keys()].filter((key) => key.startsWith('users/'))).toHaveLength(0);
+});
+test('el sello del primer envío sobrevive al reintento y corrige el día manual en otro dispositivo', async () => {
+  const d = datos();
+  Object.assign(d.checkins[0], relojBosque.capturar(), { fecha: '2040-05-03' });
+  mockPerderRespuesta = true;
+  await expect(sincronizar('A', d)).rejects.toThrow('respuesta perdida');
+  const sello = mockDocs.get('users/A/checkins/id1').confirmadoEn.toMillis();
+  relojBosque.reiniciar();
+  const resultado = await sincronizar('A', d);
+  for (const base of [d, { ...d, checkins: [] }]) {
+    const [registro] = aplicarSync(base, resultado).checkins;
+    expect(registro._confirmadoMs).toBe(sello);
+    expect(diaConfirmado(registro)).toBe('2026-11-11');
+  }
+});
+test('subir una captura de otra sesión conserva la fecha provisional', async () => {
+  const d = datos();
+  Object.assign(d.checkins[0], relojBosque.capturar(), { fecha: '2026-11-07' });
+  relojBosque.reiniciar();
+  const [registro] = aplicarSync(d, await sincronizar('A', d)).checkins;
+  expect(registro.fecha).toBe('2026-11-07');
+  expect(diaConfirmado(registro)).toBeNull();
 });

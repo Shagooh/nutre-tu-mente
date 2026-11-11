@@ -1,3 +1,4 @@
+import { relojBosque } from '../reloj-bosque';
 import { ETAPAS, FRASES } from '../content';
 import {
   cambioCalma,
@@ -79,7 +80,7 @@ describe('últimos 7 días', () => {
   test('devuelve 7 días, el último es hoy', () => {
     const dias = ultimos7(vacio());
     expect(dias).toHaveLength(7);
-    expect(dias[6].fecha).toBe(hoyISO());
+    expect(dias[6].fecha).toBe(relojBosque.hoy());
   });
 
   test('los días sin check-in quedan en blanco', () => {
@@ -87,7 +88,7 @@ describe('últimos 7 días', () => {
   });
 
   test('promedia el ánimo de varios check-ins del mismo día', () => {
-    const d = { ...vacio(), checkins: [{ fecha: hoyISO(), animo: 2 }, { fecha: hoyISO(), animo: 4 }] };
+    const d = { ...vacio(), checkins: [{ fecha: relojBosque.hoy(), animo: 2 }, { fecha: relojBosque.hoy(), animo: 4 }] };
     expect(ultimos7(d)[6].animo).toBe(3);
   });
 });

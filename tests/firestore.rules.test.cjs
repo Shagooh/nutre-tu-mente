@@ -78,3 +78,10 @@ test('registros legados solo admiten añadir metadato generación', async () => 
   await assertSucceeds(updateDoc(registro(a), { generacion: 'g1' }));
   await assertFails(updateDoc(registro(a), { actualizado: serverTimestamp() }));
 });
+test('solo el servidor puede confirmar la hora del bosque', async () => {
+  const a = db('A');
+  await setDoc(control(a), activo);
+  await assertFails(setDoc(registro(a), { ...checkin(), confirmadoEn: new Date('2040-01-01') }));
+  await assertSucceeds(setDoc(registro(a), { ...checkin(), confirmadoEn: serverTimestamp() }));
+  await assertFails(updateDoc(registro(a), { confirmadoEn: serverTimestamp() }));
+});

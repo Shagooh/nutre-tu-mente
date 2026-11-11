@@ -62,6 +62,11 @@ Cada tarea está acotada a 2 horas como máximo; dividir si la ejecución revela
 
 ## 8. Bosque y recursos SVG
 
+- [x] 8.12 Mostrar en Inicio y Progreso el roble del laboratorio según fechas confirmadas del mes en el perfil vinculado. Sin referencia temporal fiable se conserva el último mes confirmado. Validar duplicados, cambio de mes y días provisionales.
+
+- [x] 8.11 Integrar calendario confirmado por recepción del servidor, referencia monotónica de sesión y registros provisionales. Probar cambio de reloj, reconexión e inmutabilidad.
+
+- [ ] 8.10 Aplicar la entrega provisional autorizada el 11-11: bellota del laboratorio de roble como única elección del onboarding, conservar la especie al guardar y mostrarla sin sustitución por flores en Inicio/Progreso/Ajustes; probar consentimiento, guardado fallido, reintento y compatibilidad histórica (2 h).
 - [ ] 8.1 Recibir y validar los 30 SVG del roble de prueba, con semilla como índice 0 previo al check-in; documentar los recursos pendientes de las seis especies y la selección de especie al cambiar mes (1 h).
 - [ ] 8.2 Implementar catálogo de seis especies y nombre opcional; probar lista exacta y compatibilidad de elecciones históricas sin sustitución silenciosa (2 h).
 - [ ] 8.3 Implementar proyección de hoja diaria y crecimiento mensual con índice de prueba min(días, 29); probar meses 28/29/30/31, semilla con cero días, ausencias y varios check-ins (2 h).

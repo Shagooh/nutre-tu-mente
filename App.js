@@ -73,7 +73,7 @@ export default Sentry.wrap(function App() {
   }
 
   const terminarOnboarding = (perfil, espacio) => {
-    actualizar(() => ({
+    return actualizar(() => ({
       perfil,
       mental: [{ id: nuevoId(), fecha: hoyISO(), valor: espacio }],
       ...tocarPerfil(),

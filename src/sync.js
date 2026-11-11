@@ -3,6 +3,8 @@ import { db } from './firebase';
 import { COLECCIONES, limpiar } from './fusion';
 import { conflicto, fusionarPerfil, iguales } from './contratos-sync';
 
+import { relojBosque } from './reloj-bosque';
+
 const controlRef = (uid) => doc(db, 'syncControls', uid);
 const asegurarControl = (snap, generacion) => {
   const c = snap.data();
@@ -47,10 +49,13 @@ export async function sincronizar(uid, d) {
         const existente = await tx.get(ref);
         const cuerpo = { ...limpiar(it), generacion };
         if (existente.exists()) {
-          const { actualizado, generacion: anterior, ...guardado } = existente.data();
+          const { actualizado, confirmadoEn, generacion: anterior, ...guardado } = existente.data();
           if (!iguales(limpiar(it), guardado) || (anterior && anterior !== generacion)) throw conflicto();
           if (!anterior) tx.update(ref, { generacion });
-        } else tx.set(ref, { ...cuerpo, actualizado: serverTimestamp() });
+        } else {
+          if (col === 'checkins' && relojBosque.reciente(it._captura)) cuerpo.confirmadoEn = serverTimestamp();
+          tx.set(ref, { ...cuerpo, actualizado: serverTimestamp() });
+        }
       });
       (subidos[col] ||= []).push(it.id);
     }
@@ -84,8 +89,13 @@ export async function sincronizar(uid, d) {
   for (const col of COLECCIONES) {
     const snap = await getDocs(collection(db, 'users', uid, col));
     snap.forEach((s) => {
-      const { actualizado, generacion: g, ...resto } = s.data();
-      if (!g || g === generacion) remoto[col].push({ ...resto, id: s.id });
+      const { actualizado, confirmadoEn, generacion: g, ...resto } = s.data();
+      if (g && g !== generacion) return;
+      const ms = confirmadoEn?.toMillis?.();
+      if (col === 'checkins' && Number.isFinite(ms) && !s.metadata?.hasPendingWrites) {
+        resto._confirmadoMs = ms;
+      }
+      remoto[col].push({ ...resto, id: s.id });
     });
   }
   const perfil = await getDoc(doc(db, 'users', uid));

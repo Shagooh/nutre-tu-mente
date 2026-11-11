@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { color } from '../theme';
 import { etapaPlanta } from '../logic';
+import RobleMensual from './RobleMensual';
 
 // La planta crece con el cuidado. Nunca se debilita si un día no entras.
-export default function Planta({ flor, pts, grande }) {
+export default function Planta({ flor, pts, grande, uid, checkins }) {
+  if (flor === 'roble') return <RobleMensual uid={uid} checkins={checkins} grande={grande} />;
+  return <PlantaHistorica flor={flor} pts={pts} grande={grande} />;
+}
+
+function PlantaHistorica({ flor, pts, grande }) {
   const etapa = etapaPlanta(pts, flor);
   const [escala] = useState(() => new Animated.Value(etapa.escala));
   const [balanceo] = useState(() => new Animated.Value(0));

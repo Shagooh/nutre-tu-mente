@@ -49,6 +49,7 @@ Para las pruebas visuales usamos el [roble provisional sin rostro](../assets/pru
 - Empate confirmado: gana el último check-in de intensidad máxima. Desempate técnico adicional por ID si coincide el instante, para mantener convergencia entre dispositivos.
 - El roble se habilita solo como recurso de desarrollo/prueba, no como séptima especie del catálogo final. Los SVG de las seis especies siguen pendientes; no se encargó todavía una serie por especie.
 - Especie por defecto al cambiar mes: pendiente de definición. No resolverla en silencio durante implementación.
+- Requisito de producto añadido el 2026-11-07: Mi bosque se organiza por año y cada año tiene un resumen propio, asociado a la misma usuaria que sus árboles y check-ins. El detalle de indicadores anuales queda por especificar antes de implementar.
 
 ## Dependencias externas y revisión
 

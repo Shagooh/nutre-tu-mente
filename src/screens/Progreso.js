@@ -20,7 +20,7 @@ export default function Progreso({ datos, onEspacioMental }) {
       <Titulo>Tu progreso</Titulo>
       <Texto suave style={{ marginBottom: 6 }}>Un recorrido amable, sin números que exigir.</Texto>
 
-      <Planta flor={perfil.flor} pts={puntos(datos)} grande />
+      <Planta uid={datos.cuentaUid} checkins={datos.checkins} flor={perfil.flor} pts={puntos(datos)} grande />
 
       <Tarjeta>
         <Text style={s.etiqueta}>ÚLTIMOS 7 DÍAS · ¿CÓMO ESTUVE?</Text>

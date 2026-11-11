@@ -60,3 +60,14 @@ El sistema MUST NOT presentar el dibujo procedural o recursos de otras especies 
 #### Scenario: Falta de SVG
 - **WHEN** todavía no se entregan los SVG de una especie
 - **THEN** la aceptación visual de esa especie permanece pendiente y cualquier sustituto de desarrollo se identifica como provisional
+
+### Requirement: Calendario verificable del bosque
+El bosque SHALL derivar el día confirmado de la recepción del check-in en Firestore en America/Santiago. El teléfono SHALL guardar sin red y conservar una fecha provisional o estimada con tiempo monotónico desde una referencia reciente.
+
+#### Scenario: Reloj alterado
+- **WHEN** cambia el calendario o la zona del dispositivo entre dos registros recibidos el mismo día del bosque
+- **THEN** ambos corresponden a una sola fecha confirmada
+
+#### Scenario: Sincronización tardía
+- **WHEN** una captura pendiente se sube después de perder la referencia de sesión
+- **THEN** conserva su fecha de historial sin atribuirle un día confirmado al reconectar

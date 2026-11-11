@@ -12,7 +12,7 @@ const clave = (it) => `${it.fecha || ''} ${it.hora || ''} ${it.id}`;
 
 // Elimina marcas internas (_s) y valores undefined, que Firestore no acepta.
 export const limpiar = (obj) => {
-  const { _s, ...resto } = obj;
+  const { _s, _captura, _confirmadoMs, ...resto } = obj;
   return JSON.parse(JSON.stringify(resto));
 };
 
@@ -41,7 +41,7 @@ export function fusionar(local, remoto) {
     (local[col] || []).forEach((it) => mapa.set(it.id, it));
     (remoto[col] || []).forEach((it) => {
       const ya = mapa.get(it.id);
-      mapa.set(it.id, { ...(ya || it), _s: true }); // lo que existe en la nube ya está sincronizado
+      mapa.set(it.id, { ...(ya || it), ...(it._confirmadoMs != null && { _confirmadoMs: it._confirmadoMs }), _s: true }); // lo que existe en la nube ya está sincronizado
     });
     salida[col] = [...mapa.values()].sort((a, b) => (clave(a) < clave(b) ? -1 : 1));
   });
@@ -94,7 +94,7 @@ export function aplicarSync(d, { remoto, subidos, perfilSubido }) {
 export function desvincular(d) {
   const cambios = { cuentaUid: null, ultimaSync: null, perfilSucio: !!d.perfil, perfilBase: null, perfilRevision: 0, nubeGeneracion: null, requiereVincular: true, borrado: null };
   COLECCIONES.forEach((col) => {
-    cambios[col] = (d[col] || []).map(({ _s, ...resto }) => resto);
+    cambios[col] = (d[col] || []).map(({ _s, _captura, _confirmadoMs, ...resto }) => resto);
   });
   return cambios;
 }

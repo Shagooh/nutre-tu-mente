@@ -4,6 +4,7 @@ import { escucharSesion, salir, reautenticar, eliminarUsuario } from './cuenta';
 import { nubeActiva } from './firebase';
 import { activarNube, borrarNube, sincronizar, obtenerPerfil, obtenerControl } from './sync';
 import { aplicarSync, desvincular, hayPendientes, nuevoId } from './fusion';
+import { relojBosque } from './reloj-bosque';
 import { crearCercaSesion } from './sesion';
 import { codigoSeguro, detenerReportes, reportarError } from './reportes';
 import { cancelarRecordatorios } from './notifications';
@@ -19,6 +20,7 @@ export function useNube({ datos, actualizar, borrarTodo, leerActual }) {
   useEffect(() => escucharSesion((u) => {
     cerca.current.cambiar(u?.uid || null);
     cuenta.current = u;
+    relojBosque.reiniciar();
     setUsuario(u);
     setEstadoSync({ estado: 'inactivo', cuando: null });
   }), []);
@@ -56,6 +58,10 @@ export function useNube({ datos, actualizar, borrarTodo, leerActual }) {
         }
         const resultado = await sincronizar(u.uid, d);
         if (!vigente()) return;
+        // Solo un registro recién capturado sirve de referencia para esta sesión.
+        const recientes = new Set(d.checkins.filter((c) => !c._s && relojBosque.reciente(c._captura)).map((c) => c.id));
+        const muestras = (resultado.remoto.checkins || []).filter((c) => recientes.has(c.id) && Number.isFinite(c._confirmadoMs));
+        if (muestras.length) relojBosque.ajustar(Math.max(...muestras.map((c) => c._confirmadoMs)));
         await actualizar((actual) => ({ ...aplicarSync(actual, resultado), ultimaSync: resultado.remoto.ultimaSync }), vigente);
         if (vigente()) setEstadoSync({ estado: 'ok', cuando: Date.now() });
       } catch (e) {
@@ -76,7 +82,7 @@ export function useNube({ datos, actualizar, borrarTodo, leerActual }) {
     return () => clearTimeout(t);
   }, [usuario, Boolean(datos), datos?.perfilActualizado, datos?.checkins.length, datos?.cuestas.length, datos?.mental.length, datos?.borrado, sincronizarAhora]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') sincronizarAhora(); });
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') sincronizarAhora(); else relojBosque.reiniciar(); });
     return () => sub.remove();
   }, [sincronizarAhora]);
 

@@ -4,6 +4,7 @@ import { Boton, Chip, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui'
 import { ESTILOS, FLORES, SLOTS } from '../content';
 import { horaTexto } from '../logic';
 import { color } from '../theme';
+import BellotaRoble from '../components/BellotaRoble';
 
 export default function Ajustes({
   perfil,
@@ -98,12 +99,19 @@ export default function Ajustes({
       </Tarjeta>
 
       <Tarjeta>
-        <Text style={s.etiqueta}>MI FLOR</Text>
+        <Text style={s.etiqueta}>{perfil.flor === 'roble' ? 'MI ÁRBOL' : 'MI FLOR'}</Text>
+        {perfil.flor === 'roble' ? (
+          <>
+            <BellotaRoble size={140} etiqueta />
+            <Texto suave>Tu roble empieza como una bellota.</Texto>
+          </>
+        ) : (
         <View style={s.chips}>
           {FLORES.map((f) => (
             <Chip key={f.id} texto={`${f.final} ${f.nombre}`} activo={perfil.flor === f.id} onPress={() => onCambiarPerfil({ flor: f.id })} />
           ))}
         </View>
+        )}
       </Tarjeta>
 
       <Tarjeta>

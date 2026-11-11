@@ -106,10 +106,11 @@ service cloud.firestore {
         allow delete: if esDueno(uid) && !activo(uid);
         allow create: if esDueno(uid)
           && generacionValida(uid, request.resource.data)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado', 'generacion'])
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado', 'generacion', 'confirmadoEn'])
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
           && horaValida(request.resource.data)
+          && (!('confirmadoEn' in request.resource.data) || request.resource.data.confirmadoEn == request.time)
           && escala(request.resource.data.animo)
           && request.resource.data.necesidades is list
           && request.resource.data.necesidades.size() <= 10
