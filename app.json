@@ -2,6 +2,7 @@
   "expo": {
     "name": "Nutre tu mente",
     "slug": "tareas-app",
+    "scheme": "nutretumente",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +21,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-router",
       [
         "@sentry/react-native/expo",
         {

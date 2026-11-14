@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="200" viewBox="0 0 240 200" role="img" aria-labelledby="title">
+<title id="title">Roble sabio · 0 hojas verdaderas</title>
+<g stroke-linecap="round" stroke-linejoin="round">
+<ellipse cx="120" cy="177" rx="25" ry="4" fill="#dbd4b7"/>
+<path d="M117 166 Q120 159 118 151 Q116 145 121 140 Q127 146 124 152 Q121 157 125 166Z" fill="#98b653" stroke="#475432" stroke-width="2.8"/><g id="cotiledones" transform="translate(120 161.46)">
+<path d="M-2 0 C-10 -17 -24 -18 -28 -12 Q-22 2 -4 3Z" fill="#a8c35c" stroke="#475432" stroke-width="2.5"/><path d="M2 1 C9 -15 23 -22 28 -16 Q26 -3 5 4Z" fill="#bbd36d" stroke="#475432" stroke-width="2.5"/>
+<path d="M-5 0 Q-16 -7 -21 -9 M6 0 Q15 -8 21 -12" fill="none" stroke="#6c8e41" stroke-width="1.6"/>
+</g>
+<g id="semilla"><path d="M120 178 Q99 178 99 164 Q101 157 110 155 L116 160 L114 166 L121 169Z" fill="#bc7842" stroke="#473324" stroke-width="2.5"/><path d="M119 177 L122 168 L119 164 L126 157 Q140 156 141 163 Q144 172 125 178Z" fill="#df9853" stroke="#473324" stroke-width="2.5"/><path d="M102 164 Q105 159 110 159 M130 160 L136 161" fill="none" stroke="#f5bc73" stroke-width="2.5"/></g>
+</g></svg>

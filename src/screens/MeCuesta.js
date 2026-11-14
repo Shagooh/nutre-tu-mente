@@ -16,12 +16,18 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
   const [trato, setTrato] = useState(null);
   const [calmaDespues, setCalmaDespues] = useState(null);
   const [apoyo, setApoyo] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
 
   const tipo = TIPOS_HAMBRE.find((t) => t.id === hambre);
   const accion = NECESIDADES.find((n) => n.id === necesidad);
 
-  const terminar = () => {
-    onGuardar({
+  const terminar = async () => {
+    if (guardando) return;
+    setGuardando(true);
+    setError('');
+    try {
+    await onGuardar({
       fecha: hoyISO(),
       hora: new Date().toTimeString().slice(0, 5),
       calmaAntes,
@@ -32,6 +38,9 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
       trato,
     });
     onCerrar();
+    } catch {
+      setError('No pudimos guardar. Tus respuestas siguen aquí. Intenta otra vez.');
+    } finally { setGuardando(false); }
   };
 
   if (apoyo) {
@@ -77,7 +86,7 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
         <Respiracion segundos={60} onTerminar={() => setRespiro(true)} />
         {respiro ? <Texto style={{ textAlign: 'center' }}>Muy bien 🌿 Lo hiciste.</Texto> : null}
         <Texto suave style={{ textAlign: 'center', fontSize: 14, marginTop: 8 }}>
-          Si hoy no puedes, puedes continuar sin respirar.
+          Puedes omitir este paso.
         </Texto>
       </>
     );
@@ -158,10 +167,11 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
         </Pressable>
       </View>
       {contenido}
+      {error ? <Texto accessibilityRole="alert">{error}</Texto> : null}
       <View style={{ marginTop: 18 }}>
         <Boton
-          titulo={textoBoton}
-          disabled={!puedeSeguir}
+          titulo={guardando ? 'Guardando…' : textoBoton}
+          disabled={!puedeSeguir || guardando}
           onPress={() => (paso === 5 ? terminar() : setPaso(paso + 1))}
         />
         {paso === 1 && !respiro ? (

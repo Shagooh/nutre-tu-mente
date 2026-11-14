@@ -1,5 +1,11 @@
 import { ANIMOS, ETAPAS, FLORES, FRASES } from './content';
 
+import { relojBosque } from './reloj-bosque';
+import { diaDelBosque } from './contrato-bosque';
+import { elegirCheckinDelDia } from './checkin-diario';
+import { EMOCIONES_CHECKIN } from './content/checkin';
+
+const fechaHistorial = (c) => diaDelBosque(c) ?? c.fecha;
 const dos = (n) => String(n).padStart(2, '0');
 export const hoyISO = (d = new Date()) => `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
 export const horaTexto = (h, m) => `${dos(h)}:${dos(m)}`;
@@ -21,7 +27,7 @@ export function saludo() {
 
 // Puntos de cuidado: solo suben, nunca bajan.
 export function puntos(d) {
-  const diasCheck = new Set(d.checkins.map((c) => c.fecha)).size;
+  const diasCheck = new Set(d.checkins.map(fechaHistorial)).size;
   const porDia = {};
   d.cuestas.forEach((c) => {
     porDia[c.fecha] = Math.min(3, (porDia[c.fecha] || 0) + 1);
@@ -40,12 +46,17 @@ export function ultimos7(d) {
   const nombres = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
   const dias = [];
   for (let i = 6; i >= 0; i--) {
-    const f = new Date();
-    f.setDate(f.getDate() - i);
-    const fecha = hoyISO(f);
-    const del = d.checkins.filter((c) => c.fecha === fecha);
-    const animo = del.length ? Math.round(del.reduce((a, c) => a + c.animo, 0) / del.length) : null;
-    dias.push({ fecha, etiqueta: nombres[f.getDay()], animo, emoji: animo ? ANIMOS[animo - 1].emoji : null });
+    const f = new Date(relojBosque.hoy() + 'T12:00:00Z');
+    f.setUTCDate(f.getUTCDate() - i);
+    const fecha = f.toISOString().slice(0, 10);
+    const del = d.checkins.filter((c) => fechaHistorial(c) === fecha);
+    const elegido = elegirCheckinDelDia(del);
+    const emocion = EMOCIONES_CHECKIN.find((e) => e.id === elegido?.emocion);
+    const historicos = del.filter((c) => Number.isInteger(c.animo) && c.animo >= 1 && c.animo <= 5);
+    const animo = historicos.length ? Math.round(historicos.reduce((a, c) => a + c.animo, 0) / historicos.length) : null;
+    dias.push({ fecha, etiqueta: nombres[f.getUTCDay()], animo, emocion: emocion?.id ?? null,
+      descripcion: emocion?.texto ?? (animo ? ANIMOS[animo - 1].texto : null),
+      emoji: emocion?.icono ?? (animo ? ANIMOS[animo - 1].emoji : null) });
   }
   return dias;
 }
@@ -71,7 +82,7 @@ export function diasDesde(fechaISO) {
 }
 
 export function logros(d) {
-  const diasCheck = new Set(d.checkins.map((c) => c.fecha)).size;
+  const diasCheck = new Set(d.checkins.map(fechaHistorial)).size;
   const respiraciones = d.cuestas.filter((c) => c.respiro).length;
   return [
     { id: 'l1', emoji: '🌱', texto: 'Hiciste tu primer check-in', ok: d.checkins.length >= 1 },
@@ -80,6 +91,8 @@ export function logros(d) {
     { id: 'l4', emoji: '📖', texto: 'Leíste tu primera mini lección', ok: d.lecciones.length >= 1 },
     { id: 'l5', emoji: '🌿', texto: 'Te escuchaste en 3 días distintos', ok: diasCheck >= 3 },
     { id: 'l6', emoji: '🔁', texto: 'Volviste después de un tiempo', ok: d.retornos >= 1 },
-    { id: 'l7', emoji: '🌸', texto: 'Tu planta floreció', ok: puntos(d) >= 15 },
+    d.perfil?.flor === 'roble'
+      ? { id: 'l7', emoji: '🌱', texto: 'Tu árbol germinó', ok: d.checkins.some((c) => diaDelBosque(c) !== null) }
+      : { id: 'l7', emoji: '🌸', texto: 'Tu planta floreció', ok: puntos(d) >= 15 },
   ];
 }

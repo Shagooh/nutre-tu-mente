@@ -36,7 +36,7 @@ Ninguna tarea requiere al equipo clínico salvo la 5.2 (texto del consentimiento
 
 - [ ] 6.1 Provocar un error de prueba en staging y comprobar en Sentry: versión correcta, entorno `staging`, sin usuario, sin correo, sin IP, sin migas de pan; repetir en web y en Android con un *development build*. _Avance: la web ya se comprobó en local con un colector propio (versión, entorno, sin datos personales y sin envío antes del consentimiento); falta staging real y Android._
 - [x] 6.2 Ejecutar `npm test` y `npx @fission-ai/openspec@1.14.3 validate --all --strict`, y revisar uno a uno los *Scenario* de `specs/reporte-de-errores/spec.md` contra lo implementado.
-- [x] 6.3 Ejecutar `npx tsc --noEmit` y `npx expo lint` si el proyecto los tiene configurados; indicar en el Pull Request lo que no aplique. _No aplica: el proyecto no tiene `tsconfig.json` ni configuración de ESLint._
+- [x] 6.3 Ejecutar `npx tsc --noEmit` y `npx expo lint` si el proyecto los tiene configurados; indicar en el Pull Request lo que no aplique. _Actualización 2026-11-07: la primera entrega de `actualizar-v1-contenido-y-bosque` agregó ambas configuraciones y las verificó. Ver `docs/BASE-SEGURA.md`. Retiró también la inicialización directa de App y añadió prueba de integración; no sustituye la verificación real de staging y Android pendiente en 6.1._
 
 ## Workflow follow-up
 

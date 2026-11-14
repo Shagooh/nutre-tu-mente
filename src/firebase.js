@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApps, initializeApp } from 'firebase/app';
 import * as FirebaseAuth from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { revisionDiagnostico } from './modo-revision';
 
 // Estos valores NO son secretos (identifican el proyecto; la seguridad está en las reglas de Firestore).
 // Se leen de variables EXPO_PUBLIC_* (archivo .env en local, y variables de GitHub/Cloud Build en CI).
@@ -16,7 +17,7 @@ const config = {
 };
 
 // Sin configuración la app funciona 100 % en modo local (sin cuentas ni nube).
-export const nubeActiva = Boolean(config.apiKey && config.projectId && config.appId);
+export const nubeActiva = !revisionDiagnostico && Boolean(config.apiKey && config.projectId && config.appId);
 
 let app = null;
 let auth = null;
@@ -30,9 +31,11 @@ if (nubeActiva) {
       Platform.OS === 'web'
         ? FirebaseAuth.initializeAuth(app, { persistence: FirebaseAuth.browserLocalPersistence })
         : FirebaseAuth.initializeAuth(app, {
+            // Metro resuelve la exportación react-native; el resolver de ESLint ve la variante web.
+            // eslint-disable-next-line import/namespace
             persistence: FirebaseAuth.getReactNativePersistence(AsyncStorage),
           });
-  } catch (e) {
+  } catch {
     // Con la recarga en caliente (fast refresh) Auth ya puede estar inicializado.
     auth = FirebaseAuth.getAuth(app);
   }

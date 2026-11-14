@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="200" viewBox="0 0 240 200" role="img" aria-labelledby="title">
+<title id="title">Roble sabio · 1 hojas verdaderas</title>
+<g stroke-linecap="round" stroke-linejoin="round">
+<ellipse cx="120" cy="177" rx="29" ry="4" fill="#dbd4b7"/>
+<g transform="translate(120 174) scale(0.49)">
+<path d="M-29 0 Q-21 -6 -19 -18 C-26 -34 -19 -51 -22 -65 Q-28 -75 -37 -80 L-36 -87 Q-21 -87 -15 -80 Q-19 -96 -10 -111 L-2 -117 Q-5 -102 3 -99 Q12 -113 24 -111 Q15 -102 16 -91 Q28 -96 36 -103 L39 -99 Q36 -89 23 -80 Q19 -71 22 -58 Q26 -44 19 -32 Q15 -19 20 -10 L31 -2 Q24 1 15 -2 Q8 6 1 1 Q-4 5 -12 0 Q-20 4 -29 0Z" fill="#b8783c" stroke="#423124" stroke-width="3.6"/>
+<path d="M14 -85 Q14 -61 20 -54 Q23 -43 15 -32 Q10 -18 16 -6 L22 -3 L14 -5 Q8 1 3 0 Q11 -19 9 -31 Q13 -52 9 -68Z" fill="#925832" stroke="none" stroke-width="2.5"/>
+<path d="M-17 -78 Q-12 -70 -15 -58 M-15 -36 Q-19 -24 -14 -17 M-11 -11 L-14 -4 M3 -14 L0 -7 M21 -84 L29 -93" fill="none" stroke="#795032" stroke-width="2.4"/>
+<path d="M-14 -91 Q-15 -100 -10 -105 M-21 -74 L-28 -80" fill="none" stroke="#efb96b" stroke-width="3.4"/>
+<g id="hoja-1" transform="translate(-32 -82) scale(-0.85 0.85) rotate(-4)">
+<path d="M0 1 Q7 -3 11 -8 C8 -16 13 -23 20 -18 C18 -28 27 -32 31 -23 C35 -34 43 -30 43 -23 Q51 -29 60 -24 Q58 -13 48 -11 C55 -6 45 0 38 -3 C39 6 29 7 24 2 C22 10 15 8 11 3 Q6 4 0 5Z" fill="#83b943" stroke="#354324" stroke-width="3"/>
+<path d="M12 1 Q33 -8 55 -21 Q39 -5 24 0 Q17 4 12 1Z" fill="#4b812e" stroke="none" stroke-width="2.5"/>
+<path d="M16 -13 Q16 -18 20 -15 M23 -23 Q26 -26 28 -22 M37 -25 Q40 -27 40 -24" fill="#badd64" stroke="#bedf69" stroke-width="2.3"/>
+<path d="M5 2 Q29 -6 51 -18 M23 -4 L23 -12 M34 -9 L40 -6" fill="none" stroke="#456d2b" stroke-width="1.7"/></g>
+</g>
+<g id="cotiledones" transform="translate(120 155.34)">
+<path d="M-2 0 C-10 -17 -24 -18 -28 -12 Q-22 2 -4 3Z" fill="#a8c35c" stroke="#475432" stroke-width="2.5"/><path d="M2 1 C9 -15 23 -22 28 -16 Q26 -3 5 4Z" fill="#bbd36d" stroke="#475432" stroke-width="2.5"/>
+<path d="M-5 0 Q-16 -7 -21 -9 M6 0 Q15 -8 21 -12" fill="none" stroke="#6c8e41" stroke-width="1.6"/>
+</g>
+<g id="semilla"><path d="M120 178 Q99 178 99 164 Q101 157 110 155 L116 160 L114 166 L121 169Z" fill="#bc7842" stroke="#473324" stroke-width="2.5"/><path d="M119 177 L122 168 L119 164 L126 157 Q140 156 141 163 Q144 172 125 178Z" fill="#df9853" stroke="#473324" stroke-width="2.5"/><path d="M102 164 Q105 159 110 159 M130 160 L136 161" fill="none" stroke="#f5bc73" stroke-width="2.5"/></g>
+</g></svg>

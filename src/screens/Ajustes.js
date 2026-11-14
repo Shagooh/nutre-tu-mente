@@ -4,6 +4,7 @@ import { Boton, Chip, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui'
 import { ESTILOS, FLORES, SLOTS } from '../content';
 import { horaTexto } from '../logic';
 import { color } from '../theme';
+import BellotaRoble from '../components/BellotaRoble';
 
 export default function Ajustes({
   perfil,
@@ -13,6 +14,7 @@ export default function Ajustes({
   onCambiarPerfil,
   onCambiarRecordatorios,
   onBorrar,
+  onVerProgreso,
 }) {
   const [confirmar, setConfirmar] = useState(false);
   const [errorBorrar, setErrorBorrar] = useState('');
@@ -32,7 +34,8 @@ export default function Ajustes({
 
   return (
     <Pantalla>
-      <Titulo>Ajustes</Titulo>
+      <Titulo>Perfil</Titulo>
+      {onVerProgreso ? <Boton titulo="Mi progreso" variante="suave" onPress={onVerProgreso} /> : null}
       <Texto suave style={{ marginBottom: 16 }}>Hola, {perfil.nombre}. Aquí decides cómo te acompañamos.</Texto>
 
       {nubeActiva ? (
@@ -98,12 +101,19 @@ export default function Ajustes({
       </Tarjeta>
 
       <Tarjeta>
-        <Text style={s.etiqueta}>MI FLOR</Text>
+        <Text style={s.etiqueta}>{perfil.flor === 'roble' ? 'MI ÁRBOL' : 'MI FLOR'}</Text>
+        {perfil.flor === 'roble' ? (
+          <>
+            <BellotaRoble size={140} etiqueta />
+            <Texto suave>Tu roble empieza como una bellota.</Texto>
+          </>
+        ) : (
         <View style={s.chips}>
           {FLORES.map((f) => (
             <Chip key={f.id} texto={`${f.final} ${f.nombre}`} activo={perfil.flor === f.id} onPress={() => onCambiarPerfil({ flor: f.id })} />
           ))}
         </View>
+        )}
       </Tarjeta>
 
       <Tarjeta>
@@ -126,7 +136,7 @@ export default function Ajustes({
                 setErrorBorrar('');
                 try {
                   await onBorrar();
-                } catch (e) {
+                } catch {
                   setErrorBorrar('No pudimos borrar tu copia en la nube (¿sin conexión?). No se borró nada. Inténtalo con internet.');
                 }
               }}
