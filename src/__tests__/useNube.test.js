@@ -30,7 +30,7 @@ function Probe() {
   return null;
 }
 const refrescar = async () => act(async () => { tree.update(<Probe />); });
-const resultado = { remoto: { checkins: [{ id: 'remoto', fecha: '2026-11-07' }], cuestas: [], mental: [], ultimaSync: 1 }, subidos: {}, perfilSubido: null };
+const resultado = { remoto: { bosqueId: 'bosque-remoto', checkins: [{ id: 'remoto', fecha: '2026-11-07', diaBosque: '2026-11-07', schemaVersion: 1 }], cuestas: [], mental: [], ultimaSync: 1 }, subidos: {}, perfilSubido: null };
 beforeEach(async () => {
   jest.useFakeTimers();
   jest.clearAllMocks();
@@ -46,6 +46,7 @@ beforeEach(async () => {
 afterEach(async () => { await act(async () => tree.unmount()); jest.useRealTimers(); });
 
 test('una respuesta tras cerrar sesión no se aplica', async () => {
+  const bosqueId = datos.bosqueId;
   let resolver;
   sincronizar.mockImplementationOnce(() => new Promise((res) => { resolver = res; }));
   let pendiente;
@@ -54,8 +55,10 @@ test('una respuesta tras cerrar sesión no se aplica', async () => {
   await act(async () => { resolver(resultado); await pendiente; });
   expect(datos.checkins).toEqual([]);
   expect(datos.ultimaSync).toBeNull();
+  expect(datos.bosqueId).toBe(bosqueId);
 });
 test('cambiar a otra cuenta no incorpora respuesta de A ni sube sus datos a B', async () => {
+  const bosqueId = datos.bosqueId;
   let resolver;
   sincronizar.mockImplementationOnce(() => new Promise((res) => { resolver = res; }));
   let pendiente;
@@ -66,6 +69,7 @@ test('cambiar a otra cuenta no incorpora respuesta de A ni sube sus datos a B', 
   expect(datos.checkins).toEqual([]);
   expect(sincronizar.mock.calls.every(([uid]) => uid === 'A')).toBe(true);
   expect(salir).toHaveBeenCalled();
+  expect(datos.bosqueId).toBe(bosqueId);
 });
 test('sesión restaurada antes de la carga puede sincronizar al cargar', async () => {
   datos = null;

@@ -14,6 +14,7 @@ export default function Ajustes({
   onCambiarPerfil,
   onCambiarRecordatorios,
   onBorrar,
+  onVerProgreso,
 }) {
   const [confirmar, setConfirmar] = useState(false);
   const [errorBorrar, setErrorBorrar] = useState('');
@@ -33,7 +34,8 @@ export default function Ajustes({
 
   return (
     <Pantalla>
-      <Titulo>Ajustes</Titulo>
+      <Titulo>Perfil</Titulo>
+      {onVerProgreso ? <Boton titulo="Mi progreso" variante="suave" onPress={onVerProgreso} /> : null}
       <Texto suave style={{ marginBottom: 16 }}>Hola, {perfil.nombre}. Aquí decides cómo te acompañamos.</Texto>
 
       {nubeActiva ? (

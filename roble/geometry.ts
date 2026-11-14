@@ -188,7 +188,7 @@ const youngTilts = [-112, 92, -58, 73, -97, 106, -49, 24];
 export const shellScale = (time: number) => 0.84 * (1 - ease((time - 2) / 6));
 
 export function bouquet(seed: number, day: number, time: number, axes: Axis[]) {
-  const id = attachments[day - 1],
+  const id = attachments[Math.min(day - 1, attachments.length - 1)],
     axis = axes[id],
     personal = (n: number) => variation(seed, day * 503 + n);
   const mature = ease((time - 8) / 12);

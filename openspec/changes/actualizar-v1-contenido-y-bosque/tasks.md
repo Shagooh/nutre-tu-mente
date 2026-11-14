@@ -34,18 +34,20 @@ Cada tarea está acotada a 2 horas como máximo; dividir si la ejecución revela
 
 ## 5. Contratos y contenido
 
+Coordinación aprobada el 13-11-2026: las tareas 1.2/2.2/3.1 de `conservar-crecimiento-offline` implementan el contrato temporal, su migración y reglas. 5.2/5.3/5.7 siguen pendientes para el resto del dominio V1; no se marcan completas por resolver solo calendario e identidad visual. El crecimiento por servidor de 8.11–8.12 queda sustituido por la propuesta offline aprobada.
+
 - [ ] 5.1 [Equipo clínico y desarrollo] Revisar ampliación de datos B9 y consentimiento; verificar aprobación escrita y proponer modificación de constitución por separado antes de activar diario/diagnóstico nuevo (1 h de preparación).
 - [ ] 5.2 Definir esquema versionado de perfil, check-in y árbol; verificar fixtures válidos e inválidos y mantener explícitas las dos escalas de espacio mental (2 h).
 - [ ] 5.3 Implementar migración local idempotente con IDs históricos; probar dos ejecuciones, blob ilegible y escritura fallida sin pérdida (2 h).
 - [ ] 5.4 Extraer catálogo de bienvenida, diagnóstico y preferencias con fuente/estado/variante; verificar texto contra secciones 2–4 y detectar faltantes (2 h).
-- [ ] 5.5 Extraer emociones, necesidades y respuestas especiales; probar precedencia y diez emociones con colores, sin cambios clínicos inventados (2 h).
+- [x] 5.5 Extraer emociones, necesidades y respuestas especiales; probar precedencia y diez emociones con colores, sin cambios clínicos inventados (2 h).
 - [ ] 5.6 Extraer frases y mapa de temas a cápsulas 1–4; probar agotamiento por estilo y sugerencias sin repetición semanal (2 h).
 - [ ] 5.7 Extender reglas y sync del nuevo dominio; probar campos nuevos autorizados, campos prohibidos y acceso cruzado antes del cliente de staging (2 h).
 
 ## 6. Navegación e incorporación
 
 - [ ] 6.1 Consultar docs Expo SDK 57 e instalar Router mediante expo install; verificar arranque web/Android, rutas fuera del dominio y documentar efecto en Expo Go (2 h).
-- [ ] 6.2 Implementar barra Inicio/Herramientas/Aprende/Perfil y accesos existentes; probar atrás, enlaces y ausencia de destinos vacíos (2 h).
+- [x] 6.2 Implementar barra Inicio/Herramientas/Aprende/Perfil y accesos existentes; probar atrás, enlaces y ausencia de destinos vacíos (2 h).
 - [ ] 6.3 Implementar cuatro bienvenidas y consentimiento; probar Saltar y bloqueo sin aceptación, registrar estado editorial (2 h).
 - [ ] 6.4 Implementar diagnóstico 1–5 con validación intermedia; probar omisiones, múltiples y exclusión de Ninguna (2 h).
 - [ ] 6.5 Implementar diagnóstico 6–12 y asignación de perfil; probar máximo tres en 9, default Conciencia y obligatoriedad de 12 (2 h).
@@ -56,26 +58,28 @@ Cada tarea está acotada a 2 horas como máximo; dividir si la ejecución revela
 
 ## 7. Check-in
 
-- [ ] 7.1 Implementar emoción e intensidad y una necesidad; probar formulario incompleto, guardado durable y persistencia sin red (2 h).
+- [x] 7.1 Implementar emoción e intensidad y una necesidad; probar formulario incompleto, guardado durable y persistencia sin red (2 h).
 - [ ] 7.2 Conectar respuesta de cuidado, regla mucho y sugerencias por perfil; probar combinaciones especiales y destinos disponibles, sin anunciar audios faltantes (2 h).
-- [ ] 7.3 Implementar desempate confirmado: último check-in de intensidad máxima, orden por instante e ID; verificar convergencia ante distinto orden de llegada (1 h).
+- [x] 7.3 Implementar desempate confirmado: último check-in de intensidad máxima, orden por instante e ID; verificar convergencia ante distinto orden de llegada (1 h).
 
 ## 8. Bosque y recursos SVG
+
+- [x] 8.13 Mostrar «Tu árbol germinó» para roble desde el primer día confirmado de la cuenta y conservar el logro histórico de flores.
 
 - [x] 8.12 Mostrar en Inicio y Progreso el roble del laboratorio según fechas confirmadas del mes en el perfil vinculado. Sin referencia temporal fiable se conserva el último mes confirmado. Validar duplicados, cambio de mes y días provisionales.
 
 - [x] 8.11 Integrar calendario confirmado por recepción del servidor, referencia monotónica de sesión y registros provisionales. Probar cambio de reloj, reconexión e inmutabilidad.
 
-- [ ] 8.10 Aplicar la entrega provisional autorizada el 11-11: bellota del laboratorio de roble como única elección del onboarding, conservar la especie al guardar y mostrarla sin sustitución por flores en Inicio/Progreso/Ajustes; probar consentimiento, guardado fallido, reintento y compatibilidad histórica (2 h).
+- [x] 8.10 Aplicar la entrega provisional autorizada el 11-11: bellota del laboratorio de roble como única elección del onboarding, conservar la especie al guardar y mostrarla sin sustitución por flores en Inicio/Progreso/Ajustes; probar consentimiento, guardado fallido, reintento y compatibilidad histórica (2 h).
 - [ ] 8.1 Recibir y validar los 30 SVG del roble de prueba, con semilla como índice 0 previo al check-in; documentar los recursos pendientes de las seis especies y la selección de especie al cambiar mes (1 h).
 - [ ] 8.2 Implementar catálogo de seis especies y nombre opcional; probar lista exacta y compatibilidad de elecciones históricas sin sustitución silenciosa (2 h).
-- [ ] 8.3 Implementar proyección de hoja diaria y crecimiento mensual con índice de prueba min(días, 29); probar meses 28/29/30/31, semilla con cero días, ausencias y varios check-ins (2 h).
+- [x] 8.3 Implementar proyección de hoja diaria y crecimiento mensual con índice de prueba min(días, 29); probar meses 28/29/30/31, semilla con cero días, ausencias y varios check-ins (2 h).
 - [ ] 8.4 Definir manifiesto y validación de SVG; verificar cantidad, viewBox, tamaño y ausencia de scripts o referencias remotas con fixtures técnicos (2 h).
 - [ ] 8.5 Integrar fotogramas y anclajes del roble solo en desarrollo/prueba; verificar un recurso visible e índices 0/1/29 para 0/1/29–31 días, sin exponerlo como especie final (2 h).
 - [ ] 8.9 Registrar entregas gráficas de las seis especies finales y abrir tareas individuales al recibirlas; verificar que ninguna se declara terminada usando el roble como sustituto (1 h).
 - [ ] 8.6 Implementar consulta accesible de hoja y leyenda; probar fecha/emoción/intensidad/necesidad/nota, iconos y lector de pantalla (2 h).
-- [ ] 8.7 Implementar Mi bosque y resumen mensual; probar tres emociones frecuentes, cambio de mes y conservación de árboles previos (2 h).
-- [ ] 8.8 Retirar puntos de planta y adornos del recorrido nuevo; verificar que Me está costando mantiene registro/calma pero no hace crecer el árbol, actualizar delta y `npm test` (2 h).
+- [x] 8.7 Implementar Mi bosque y resumen mensual; probar tres emociones frecuentes, cambio de mes y conservación de árboles previos (2 h).
+- [x] 8.8 Retirar puntos de planta y adornos del recorrido nuevo; verificar que Me está costando mantiene registro/calma pero no hace crecer el árbol, actualizar delta y `npm test` (2 h).
 
 ## 9. Verificación integrada
 
@@ -86,6 +90,8 @@ Cada tarea está acotada a 2 horas como máximo; dividir si la ejecución revela
 - [ ] 9.5 Preparar propuesta siguiente de herramientas, diario, audios, semana, logros, recordatorios y edición editorial; verificar cobertura contra secciones 5 y 9–14 sin incluir Fase 2 (2 h).
 
 ## Workflow follow-up
+
+- Evidencia del 14-11-2026 para 8.7: ruta protegida `/bosque`, acceso desde Inicio, resumen de tres emociones ganadoras por día, cambio de diciembre a enero con semilla nueva y recuperación del mes anterior. Pruebas de regreso hoja → cuidado → misma hoja, días 30/31, históricos y cambio de almacenamiento. Jest: 20 suites/165 pruebas; lint, typecheck y exportaciones web/Android aprobados. 8.6 conserva pendiente diario/lector real; 6.1 y 7.2 siguen pendientes. Ver `docs/CHECKIN-HOJA.md` y `docs/CHECKLIST-V1-DIAGNOSTICO.md`.
 
 - Revisar y unir propuestas antes de aplicar comportamiento nuevo, siguiendo `docs/PROCESO-SDD.md`.
 - Abrir una tarea de integración de máximo 2 horas por cada especie final al recibir sus recursos; 8.5 solo integra el roble de prueba.

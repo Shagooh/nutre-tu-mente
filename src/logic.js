@@ -1,8 +1,11 @@
 import { ANIMOS, ETAPAS, FLORES, FRASES } from './content';
 
-import { diaConfirmado, relojBosque } from './reloj-bosque';
+import { relojBosque } from './reloj-bosque';
+import { diaDelBosque } from './contrato-bosque';
+import { elegirCheckinDelDia } from './checkin-diario';
+import { EMOCIONES_CHECKIN } from './content/checkin';
 
-const fechaHistorial = (c) => diaConfirmado(c) ?? c.fecha;
+const fechaHistorial = (c) => diaDelBosque(c) ?? c.fecha;
 const dos = (n) => String(n).padStart(2, '0');
 export const hoyISO = (d = new Date()) => `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
 export const horaTexto = (h, m) => `${dos(h)}:${dos(m)}`;
@@ -47,8 +50,13 @@ export function ultimos7(d) {
     f.setUTCDate(f.getUTCDate() - i);
     const fecha = f.toISOString().slice(0, 10);
     const del = d.checkins.filter((c) => fechaHistorial(c) === fecha);
-    const animo = del.length ? Math.round(del.reduce((a, c) => a + c.animo, 0) / del.length) : null;
-    dias.push({ fecha, etiqueta: nombres[f.getUTCDay()], animo, emoji: animo ? ANIMOS[animo - 1].emoji : null });
+    const elegido = elegirCheckinDelDia(del);
+    const emocion = EMOCIONES_CHECKIN.find((e) => e.id === elegido?.emocion);
+    const historicos = del.filter((c) => Number.isInteger(c.animo) && c.animo >= 1 && c.animo <= 5);
+    const animo = historicos.length ? Math.round(historicos.reduce((a, c) => a + c.animo, 0) / historicos.length) : null;
+    dias.push({ fecha, etiqueta: nombres[f.getUTCDay()], animo, emocion: emocion?.id ?? null,
+      descripcion: emocion?.texto ?? (animo ? ANIMOS[animo - 1].texto : null),
+      emoji: emocion?.icono ?? (animo ? ANIMOS[animo - 1].emoji : null) });
   }
   return dias;
 }
@@ -83,6 +91,8 @@ export function logros(d) {
     { id: 'l4', emoji: '📖', texto: 'Leíste tu primera mini lección', ok: d.lecciones.length >= 1 },
     { id: 'l5', emoji: '🌿', texto: 'Te escuchaste en 3 días distintos', ok: diasCheck >= 3 },
     { id: 'l6', emoji: '🔁', texto: 'Volviste después de un tiempo', ok: d.retornos >= 1 },
-    { id: 'l7', emoji: '🌸', texto: 'Tu planta floreció', ok: puntos(d) >= 15 },
+    d.perfil?.flor === 'roble'
+      ? { id: 'l7', emoji: '🌱', texto: 'Tu árbol germinó', ok: d.checkins.some((c) => diaDelBosque(c) !== null) }
+      : { id: 'l7', emoji: '🌸', texto: 'Tu planta floreció', ok: puntos(d) >= 15 },
   ];
 }

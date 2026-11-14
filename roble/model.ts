@@ -1,3 +1,5 @@
+import type { Emotion } from './emotions';
+
 export const palettes = {
   happy: {
     label: "Alegría",
@@ -48,6 +50,9 @@ export interface TreeConfig {
   seed: number;
   growthDay: number;
   moods: Record<number, Mood>;
+  emotions?: Record<number, Emotion>;
+  leafSymbols?: Record<number, string>;
+  leafCount?: number;
 }
 export const unassigned = {
   label: "Sin seleccionar",

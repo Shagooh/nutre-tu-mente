@@ -14,6 +14,9 @@ export function crearPersistencia(storage, key, preparar) {
     async cargar() {
       const raw = await storage.getItem(key);
       const siguiente = preparar(raw === null ? null : JSON.parse(raw));
+      // Una migración no se publica hasta quedar durable. Si falla, el blob
+      // anterior permanece intacto y no habilitamos escrituras sobre datos vacíos.
+      if (raw !== null && JSON.stringify(siguiente) !== raw) await storage.setItem(key, JSON.stringify(siguiente));
       actual = siguiente;
       oyentes.forEach((fn) => fn(siguiente));
       return siguiente;

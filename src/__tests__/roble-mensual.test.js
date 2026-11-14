@@ -3,16 +3,17 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import Planta from '../components/Planta';
 const dia = (fecha) => ({ _confirmadoMs: Date.parse(fecha + 'T12:00Z') });
-test('el último mes confirmado sobrevive al reinicio y los días provisionales o repetidos no suman', () => {
+test('el mes actual no depende del último confirmado y los provisionales suman una sola fecha', () => {
   const lista = [dia('2026-10-31'), dia('2026-11-01'), dia('2026-11-01'), { fecha: '2099-12-10' }];
-  expect(proyectarRoble('A', lista, null)).toMatchObject({ mes: '2026-11', dias: 1 });
+  expect(proyectarRoble('A', lista, '2026-11-13')).toMatchObject({ mes: '2026-11', dias: 1 });
+  expect(proyectarRoble('local', lista, '2099-12-10')).toMatchObject({ mes: '2099-12', dias: 1 });
   expect(proyectarRoble('A', lista, '2026-12-01')).toMatchObject({ mes: '2026-12', dias: 0 });
   expect(proyectarRoble(null, lista, null)).toBeNull();
-  expect(proyectarRoble('A', lista, null).tree.seed).not.toBe(proyectarRoble('B', lista, null).tree.seed);
+  expect(proyectarRoble('A', lista, '2026-11-13').tree.seed).not.toBe(proyectarRoble('B', lista, '2026-11-13').tree.seed);
 });
 test('31 fechas siguen contando aunque el último dibujo corresponda al índice 29', () => {
   const lista = Array.from({ length: 31 }, (_, i) => dia('2026-12-' + String(i + 1).padStart(2, '0')));
-  expect(proyectarRoble('A', lista, null)).toMatchObject({ dias: 31, tree: { growthDay: 29 } });
+  expect(proyectarRoble('A', lista, '2026-12-31')).toMatchObject({ dias: 31, tree: { growthDay: 29 } });
 });
 
 test('el primer día confirmado sustituye la bellota por el SVG del brote', async () => {

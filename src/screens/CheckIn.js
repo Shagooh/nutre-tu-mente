@@ -1,111 +1,89 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Boton, Chip, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
-import { ANIMOS, NECESIDADES } from '../content';
+import { Boton, Chip, Pantalla, Texto, Titulo } from '../components/ui';
+import { EMOCIONES_CHECKIN, INTENSIDADES_CHECKIN, NECESIDADES_CHECKIN } from '../content/checkin';
 import { relojBosque } from '../reloj-bosque';
+import { nuevoId } from '../fusion';
+import { validarCalendario } from '../contrato-bosque';
 import { color } from '../theme';
+import CuidadoCheckin from '../components/CuidadoCheckin';
 
-export default function CheckIn({ onGuardar, onCerrar }) {
-  const [animo, setAnimo] = useState(null);
-  const [necesidades, setNecesidades] = useState([]);
+export default function CheckIn({ onGuardar, onCerrar, onAbrirCuidado }) {
+  const [emocion, setEmocion] = useState(null);
+  const [intensidad, setIntensidad] = useState(null);
+  const [necesidad, setNecesidad] = useState(null);
   const [cuidado, setCuidado] = useState('');
   const [listo, setListo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
-
-  const alternar = (id) =>
-    setNecesidades((n) => (n.includes(id) ? n.filter((x) => x !== id) : [...n, id]));
+  const captura = useRef(null);
+  const ocupado = useRef(false);
+  const completa = Boolean(emocion && intensidad && necesidad);
 
   const guardar = async () => {
-    if (guardando) return;
+    if (ocupado.current || listo) return;
+    if (!completa) { setError('Elige una emoción, su intensidad y una necesidad para guardar.'); return; }
+    ocupado.current = true;
     setGuardando(true);
     setError('');
     try {
-    await onGuardar({
-      ...relojBosque.capturar(),
-      animo,
-      necesidades,
-      cuidado: cuidado.trim(),
-    });
-    setListo(true);
+      // Fecha e identidad estables incluso si el primer intento de disco falla.
+      captura.current ??= { ...relojBosque.capturar(), id: nuevoId() };
+      const registro = { ...captura.current, schemaVersion: 2, emocion, intensidad, necesidad, cuidado: cuidado.trim() };
+      if (!validarCalendario(registro)) throw new Error('storage/invalid');
+      await onGuardar(registro);
+      setListo(true);
     } catch {
       setError('No pudimos guardar. Tus respuestas siguen aquí. Intenta otra vez.');
-    } finally { setGuardando(false); }
+    } finally { ocupado.current = false; setGuardando(false); }
   };
 
-  const sugerencias = NECESIDADES.filter((n) => necesidades.includes(n.id));
-
-  if (listo) {
-    return (
-      <Pantalla edges={['top', 'bottom']}>
-        <Text style={s.hero}>🌿</Text>
-        <Titulo style={{ textAlign: 'center' }}>Gracias por detenerte</Titulo>
-        <Texto style={{ textAlign: 'center', marginBottom: 20 }}>
-          Escucharte ya es una forma de cuidarte.
-        </Texto>
-        {sugerencias[0] ? (
-          <Tarjeta tono="verde">
-            <Texto style={{ fontWeight: '600', marginBottom: 4 }}>Una idea para ahora</Texto>
-            <Texto>{sugerencias[0].accion}</Texto>
-          </Tarjeta>
-        ) : null}
-        <Boton titulo="Volver" onPress={onCerrar} />
-      </Pantalla>
-    );
-  }
+  const elegida = EMOCIONES_CHECKIN.find((e) => e.id === emocion);
+  if (listo) return (
+    <Pantalla edges={['top', 'bottom']}>
+      <Text style={s.hero}>{elegida.icono}</Text>
+      <Titulo style={{ textAlign: 'center' }}>Gracias por mirarte hoy.</Titulo>
+      <Texto style={{ textAlign: 'center', marginBottom: 20 }}>Tu registro está guardado.</Texto>
+      <CuidadoCheckin registro={{ emocion, necesidad, intensidad }} onAbrirCuidado={onAbrirCuidado} />
+      <Boton titulo="Volver" onPress={onCerrar} />
+    </Pantalla>
+  );
 
   return (
     <Pantalla edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Pressable onPress={onCerrar} accessibilityRole="button" style={{ marginBottom: 10 }}>
+        <Pressable onPress={onCerrar} disabled={guardando} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
           <Text style={s.volver}>‹ Cerrar</Text>
         </Pressable>
         <Titulo>Check-in</Titulo>
-
+        <Texto suave>Contenido y colores provisionales · en revisión clínica</Texto>
         <Texto style={s.pregunta}>¿Cómo estoy?</Texto>
-        <View style={s.animos}>
-          {ANIMOS.map((a) => (
-            <Pressable
-              key={a.valor}
-              accessibilityRole="button"
-              accessibilityLabel={a.texto}
-              accessibilityState={{ selected: animo === a.valor }}
-              onPress={() => setAnimo(a.valor)}
-              style={[s.animo, animo === a.valor && s.animoOn]}
-            >
-              <Text style={{ fontSize: 30 }}>{a.emoji}</Text>
-              <Text style={s.animoTexto}>{a.texto}</Text>
+        <View style={s.emociones}>
+          {EMOCIONES_CHECKIN.map((e) => (
+            <Pressable key={e.id} accessibilityRole="radio" accessibilityLabel={e.texto}
+              accessibilityState={{ checked: emocion === e.id, disabled: guardando }} disabled={guardando}
+              onPress={() => setEmocion(e.id)} style={[s.emocion, emocion === e.id && s.elegida]}>
+              <Text style={{ fontSize: 28 }}>{e.icono}</Text>
+              <Text style={s.etiqueta}>{e.texto}</Text>
             </Pressable>
           ))}
         </View>
-
-        <Texto style={s.pregunta}>¿Qué necesito?</Texto>
+        <Texto style={s.pregunta}>¿Con qué intensidad?</Texto>
         <View style={s.chips}>
-          {NECESIDADES.map((n) => (
-            <Chip key={n.id} texto={n.texto} activo={necesidades.includes(n.id)} onPress={() => alternar(n.id)} />
-          ))}
+          {INTENSIDADES_CHECKIN.map((i) => <Chip key={i.valor} texto={i.texto} activo={intensidad === i.valor} onPress={() => { if (!ocupado.current) setIntensidad(i.valor); }} />)}
         </View>
-
+        <Texto style={s.pregunta}>¿Qué necesito?</Texto>
+        <Texto suave>Elige una opción.</Texto>
+        <View style={s.chips}>
+          {NECESIDADES_CHECKIN.map((n) => <Chip key={n.id} texto={n.texto} activo={necesidad === n.id} onPress={() => { if (!ocupado.current) setNecesidad(n.id); }} />)}
+        </View>
         <Texto style={s.pregunta}>¿Cómo me puedo cuidar ahora?</Texto>
-        {sugerencias.length ? (
-          <Tarjeta tono="verde">
-            {sugerencias.slice(0, 2).map((n) => (
-              <Texto key={n.id} style={{ marginBottom: 4 }}>• {n.accion}</Texto>
-            ))}
-          </Tarjeta>
-        ) : null}
-        <TextInput
-          style={s.input}
-          value={cuidado}
-          onChangeText={setCuidado}
-          placeholder="Si quieres, escríbelo aquí (opcional)"
-          placeholderTextColor={color.suave}
-          multiline
-          maxLength={280}
-        />
-
-        {error ? <Texto accessibilityRole="alert">{error}</Texto> : null}
-        <Boton titulo={guardando ? 'Guardando…' : 'Guardar'} onPress={guardar} disabled={!animo || guardando} style={{ marginTop: 18 }} />
+        <TextInput accessibilityLabel="Cómo me puedo cuidar ahora, opcional" style={s.input}
+          value={cuidado} onChangeText={setCuidado} editable={!guardando}
+          placeholder="Si quieres, escríbelo aquí (opcional)" placeholderTextColor={color.suave}
+          multiline maxLength={280} />
+        {error ? <Text accessibilityRole="alert" style={{ color: color.texto, marginTop: 12 }}>{error}</Text> : null}
+        <Boton titulo={guardando ? 'Guardando…' : 'Guardar'} onPress={guardar} disabled={!completa || guardando} style={{ marginTop: 18 }} />
       </KeyboardAvoidingView>
     </Pantalla>
   );
@@ -115,28 +93,10 @@ const s = StyleSheet.create({
   hero: { fontSize: 64, textAlign: 'center', marginTop: 30, marginBottom: 10 },
   volver: { color: color.primario, fontSize: 16, fontWeight: '600' },
   pregunta: { fontSize: 18, fontWeight: '600', marginTop: 18, marginBottom: 10 },
-  animos: { flexDirection: 'row', justifyContent: 'space-between' },
-  animo: {
-    width: '18.5%',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: color.borde,
-    backgroundColor: color.tarjeta,
-  },
-  animoOn: { borderColor: color.primario, backgroundColor: color.primarioClaro },
-  animoTexto: { fontSize: 11, color: color.suave, marginTop: 2 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap' },
-  input: {
-    backgroundColor: color.tarjeta,
-    borderWidth: 1.5,
-    borderColor: color.borde,
-    borderRadius: 14,
-    padding: 14,
-    minHeight: 80,
-    fontSize: 16,
-    color: color.texto,
-    textAlignVertical: 'top',
-  },
+  emociones: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  emocion: { width: '47%', flexGrow: 1, alignItems: 'center', padding: 12, minHeight: 82, borderRadius: 16, borderWidth: 1.5, borderColor: color.borde, backgroundColor: color.tarjeta },
+  elegida: { borderColor: color.primario, backgroundColor: color.primarioClaro },
+  etiqueta: { fontSize: 16, color: color.texto, marginTop: 4, textAlign: 'center' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  input: { backgroundColor: color.tarjeta, borderWidth: 1.5, borderColor: color.borde, borderRadius: 14, padding: 14, minHeight: 80, fontSize: 16, color: color.texto, textAlignVertical: 'top' },
 });

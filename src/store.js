@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { asegurarIds, tocarPerfil } from './fusion';
+import { asegurarIds, nuevoId, tocarPerfil } from './fusion';
+import { identidadBosqueValida, migrarCalendario } from './contrato-bosque';
 import { diasDesde, hoyISO } from './logic';
 import { crearPersistencia } from './persistencia';
 
@@ -10,16 +11,19 @@ export const datosVacios = () => ({
   ultimaVisita: null, cuentaUid: null, ultimaSync: null, perfilActualizado: null,
   perfilSucio: false, perfilBase: null, perfilRevision: 0, borrado: null,
   requiereVincular: false, nubeGeneracion: null,
+  bosqueId: nuevoId(),
 });
 export function prepararDatos(value) {
   if (value !== null && (typeof value !== 'object' || Array.isArray(value))) throw new Error('storage/invalid');
   const d = { ...datosVacios(), ...value };
+  if (!identidadBosqueValida(d.bosqueId)) throw new Error('storage/invalid');
   for (const col of ['checkins', 'cuestas', 'lecciones', 'mental']) {
     if (!Array.isArray(d[col])) throw new Error('storage/invalid');
   }
   if (d.perfil !== null && (typeof d.perfil !== 'object' || !Array.isArray(d.perfil.recordatorios))) throw new Error('storage/invalid');
-  if (d.perfil && !d.cuentaUid && !d.requiereVincular) Object.assign(d, tocarPerfil());
-  return asegurarIds(d);
+  if (d.perfil && !d.cuentaUid && !d.requiereVincular && !d.perfilOperacion) Object.assign(d, tocarPerfil());
+  const conIds = asegurarIds(d);
+  return { ...conIds, checkins: conIds.checkins.map(migrarCalendario) };
 }
 export function useStore() {
   const [datos, setDatos] = useState(null);

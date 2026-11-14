@@ -5,8 +5,8 @@ import { etapaPlanta } from '../logic';
 import RobleMensual from './RobleMensual';
 
 // La planta crece con el cuidado. Nunca se debilita si un día no entras.
-export default function Planta({ flor, pts, grande, uid, checkins }) {
-  if (flor === 'roble') return <RobleMensual uid={uid} checkins={checkins} grande={grande} />;
+export default function Planta({ flor, pts, grande, bosqueId, uid, checkins }) {
+  if (flor === 'roble') return <RobleMensual key={bosqueId || uid} bosqueId={bosqueId || uid} checkins={checkins} grande={grande} />;
   return <PlantaHistorica flor={flor} pts={pts} grande={grande} />;
 }
 

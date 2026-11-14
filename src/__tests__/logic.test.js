@@ -162,3 +162,13 @@ describe('contenido', () => {
     todas.forEach((f) => expect(f).not.toMatch(prohibidas));
   });
 });
+
+test('el logro del roble incluye el primer check-in provisional sin exigir cuenta', () => {
+  const d = { ...vacio(), perfil: { flor: 'roble' }, cuentaUid: 'A', checkins: [{ fecha: '2040-01-01' }] };
+  const germino = () => logros(d).find((l) => l.id === 'l7');
+  expect(germino()).toMatchObject({ texto: 'Tu árbol germinó', ok: true });
+  d.cuentaUid = null;
+  expect(germino().ok).toBe(true);
+  d.checkins[0]._confirmadoMs = Date.UTC(2026, 0, 1);
+  expect(germino().ok).toBe(true);
+});

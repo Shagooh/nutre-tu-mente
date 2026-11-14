@@ -19,3 +19,5 @@ Para explorar el crecimiento y los colores con datos ficticios, abre [el laborat
 Usa Node 24.12 (consulta `.node-version`), instala dependencias con `npm ci` y ejecuta `npm start`. Para comprobar cambios, ejecuta `npm test -- --runInBand`, `npm run lint` y `npm run typecheck`. Las pruebas de seguridad utilizan Java 21 y el emulador local mediante `npm run test:rules`.
 
 El [changelog](CHANGELOG.md) resume esta entrega y sus pendientes. Consulta el [plan V1](docs/PLAN-ACTUALIZACION-V1.md), el [contrato de sincronización y borrado](docs/BASE-SEGURA.md) y la [guía del laboratorio](roble/README.md) para revisar cada área.
+
+La [hoja de ruta V1](docs/HOJA-DE-RUTA-V1.md) contrasta las 15 secciones del documento de contenido con la app y ordena las siguientes entregas.

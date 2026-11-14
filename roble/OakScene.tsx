@@ -1,6 +1,7 @@
 import React from "react";
 import { bouquet, grain, knot, ribbon, shellScale, skeleton } from "./geometry";
 import { ease, palettes, TreeConfig, unassigned } from "./model";
+import { emotionalPalettes } from './emotions';
 
 const ink = "#373d2c";
 const lobes = [
@@ -51,6 +52,7 @@ type OakProps = {
   small?: boolean;
   selected?: number;
   onSelect?: (day: number) => void;
+  LeafSymbol?: React.ElementType;
 };
 export function Oak({
   tree,
@@ -61,10 +63,11 @@ export function Oak({
   small = false,
   selected,
   onSelect,
+  LeafSymbol = 'text',
 }: OakProps) {
   const { Svg, Group, Path, Ellipse, Title } = elements;
   const axes = skeleton(tree.seed, time);
-  const days = Array.from({ length: Math.ceil(time) }, (_, i) => i + 1);
+  const days = Array.from({ length: tree.leafCount ?? Math.ceil(time) }, (_, i) => i + 1);
   // Paint the inspected bouquet in front of overlapping newer foliage.
   if (selected && days.includes(selected)) {
     days.splice(selected - 1, 1);
@@ -216,7 +219,8 @@ export function Oak({
         </Group>
         <Group id={prefix + "foliage"}>
           {days.map((day) => {
-            const color = palettes[tree.moods[day]] ?? unassigned;
+            const emotion = tree.emotions?.[day];
+            const color = (emotion && emotionalPalettes[emotion]) || palettes[tree.moods[day]] || unassigned;
             const chosen = day === selected;
             const common = {
               id: prefix + "day-" + String(day).padStart(2, "0"),
@@ -224,7 +228,8 @@ export function Oak({
               onClick: onSelect ? () => onSelect(day) : undefined,
               style: onSelect ? { cursor: "pointer" } : undefined,
             };
-            const spray = bouquet(tree.seed, day, time, axes);
+            // Los días 30/31 usan la copa adulta 29 y anclajes propios consultables.
+            const spray = bouquet(tree.seed, day, tree.leafCount ? Math.max(time, day) : time, axes);
             return (
               <Group key={day} {...common}>
                 <Title>{`Día ${day} · ${color.label}`}</Title>
@@ -267,6 +272,11 @@ export function Oak({
                         strokeWidth={chosen ? 6 : 2.9}
                         strokeLinejoin="round"
                       />
+                      {i === 0 && tree.leafSymbols?.[day] ? (
+                        <LeafSymbol x={4} y={-54} fontSize={32} textAnchor="middle" fill={color.vein}>
+                          {tree.leafSymbols[day]}
+                        </LeafSymbol>
+                      ) : null}
                       {!small && (
                         <>
                           <Path

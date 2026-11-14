@@ -67,6 +67,8 @@ test('solo ofrece roble; espera guardado, evita doble envío y permite reintento
   const tree = await montar({ onTerminar: guardar });
   await hastaBellota(tree);
   expect(texto(tree)).toContain('Todo empieza con una bellota');
+  expect(texto(tree)).toContain('también sin cuenta ni conexión');
+  expect(texto(tree)).not.toContain('confirmado en tu cuenta');
   expect(tree.root.findAllByProps({ accessibilityRole: 'radio' })[0].props.accessibilityLabel).toBe('Roble, única especie disponible');
   expect(texto(tree)).not.toMatch(/Elige tu flor|Girasol|Tulipán/);
   await pulsar(tree, 'Atrás');

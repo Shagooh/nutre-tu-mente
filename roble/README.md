@@ -29,6 +29,8 @@ La compilación escribe `index.html`, `app.css` y `app.js` en `dist/roble/`. Pue
 
 `model.ts` define `TreeConfig`, las seis paletas y las etapas. `growthDay` representa un entero de 0 a 30. `moods` indexa emociones por registro, desde 1. Una emoción ausente se muestra como «Sin seleccionar». El cursor de la animación vive en memoria.
 
+La app móvil utiliza además `emotions.ts` para las diez paletas provisionales de V1. `TreeConfig.emotions`, `leafSymbols` y `leafCount` son datos derivados de sus check-ins; no sustituyen las seis paletas históricas del laboratorio. La app conserva `growthDay = min(días, 29)` y permite 30/31 grupos consultables sobre esa copa adulta. Los colores y símbolos V1 siguen pendientes de revisión. `OakScene` comparte trazos web/nativos; el adaptador móvil traduce selección de hoja a `onPress` y usa texto SVG para los símbolos.
+
 `geometry.ts` construye ejes curvos unidos a puntos del eje padre y distribuye grupos de hojas con variaciones derivadas de la semilla y un identificador estable. Evaluar el día 30 directamente produce la misma pose que regresar desde el 10. `useGrowth.ts` controla un único reloj interrumpible.
 
 `Oak.tsx` dibuja y exporta el SVG con viewBox `0 0 1024 1024`. El grupo raíz `tree` contiene `roots`, `trunk`, `primary-branches`, `secondary-branches`, `seed` y `foliage`. Los grupos visibles `day-01` a `day-30` llevan `data-day`. Cada uno contiene las clases `leaf-base`, `leaf-shadow`, `leaf-highlight` y `leaf-vein`. Los primeros tres grupos muestran tejido embrionario dentro del corte de la bellota. El SVG descargado usa los nombres canónicos y colores explícitos. Cada miniatura estática usa el mismo motor y omite los detalles finos para su escala.

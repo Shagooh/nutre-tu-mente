@@ -15,7 +15,7 @@ const db = (uid) => uid ? env.authenticatedContext(uid).firestore() : env.unauth
 const control = (d) => doc(d, 'syncControls/A');
 const registro = (d) => doc(d, 'users/A/checkins/id1');
 const activo = { estado: 'activo', generacion: 'g1', operacion: null };
-const checkin = () => ({ id: 'id1', fecha: '2026-11-07', hora: '10:00', animo: 3, necesidades: [], cuidado: '', generacion: 'g1', actualizado: serverTimestamp() });
+const checkin = () => ({ id: 'id1', fecha: '2026-11-07', diaBosque: '2026-11-07', schemaVersion: 1, instante: '2026-11-07T13:00:00.000Z', hora: '10:00', animo: 3, necesidades: [], cuidado: '', generacion: 'g1', actualizado: serverTimestamp() });
 
 test('propietaria permitida; B y anónimo no leen ni escriben A', async () => {
   const a = db('A');
@@ -71,7 +71,7 @@ test('registros legados solo admiten añadir metadato generación', async () => 
   const a = db('A');
   await setDoc(control(a), activo);
   await env.withSecurityRulesDisabled(async (ctx) => {
-    const { generacion, ...legacy } = checkin();
+    const { generacion, schemaVersion, diaBosque, instante, ...legacy } = checkin();
     await setDoc(registro(ctx.firestore()), legacy);
   });
   await assertFails(updateDoc(registro(a), { generacion: 'g1', cuidado: 'cambio' }));
@@ -84,4 +84,78 @@ test('solo el servidor puede confirmar la hora del bosque', async () => {
   await assertFails(setDoc(registro(a), { ...checkin(), confirmadoEn: new Date('2040-01-01') }));
   await assertSucceeds(setDoc(registro(a), { ...checkin(), confirmadoEn: serverTimestamp() }));
   await assertFails(updateDoc(registro(a), { confirmadoEn: serverTimestamp() }));
+});
+
+test('calendario versionado y migración histórica estrecha sin editar cuerpo ni sellos', async () => {
+  const a = db('A');
+  await setDoc(control(a), activo);
+  for (const cambio of [{ schemaVersion: 2 }, { schemaVersion: '1' }, { diaBosque: {} }, { diaBosque: '2026-13-45' },
+    { diaBosque: '2026-02-29' }, { diaBosque: '2026-04-31' }, { instante: '2026-11-07T25:00:00.000Z' },
+    { instante: '2026-02-30T12:00:00.000Z' }, { instante: 'ayer' }, { calorias: 8 }]) {
+    await assertFails(setDoc(registro(a), { ...checkin(), ...cambio }));
+  }
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const { schemaVersion, diaBosque, instante, ...legacy } = checkin();
+    await setDoc(registro(ctx.firestore()), legacy);
+  });
+  await assertFails(updateDoc(registro(a), { schemaVersion: 1, diaBosque: '2026-11-08' }));
+  await assertFails(updateDoc(registro(a), { schemaVersion: 1, diaBosque: '2026-11-07', animo: 5 }));
+  await assertFails(updateDoc(registro(a), { schemaVersion: 1, diaBosque: '2026-11-07', instante: '2026-11-07T12:00:00.000Z' }));
+  await assertSucceeds(updateDoc(registro(a), { schemaVersion: 1, diaBosque: '2026-11-07' }));
+  await assertFails(updateDoc(registro(a), { diaBosque: '2026-11-08' }));
+  await assertFails(updateDoc(registro(a), { actualizado: serverTimestamp() }));
+});
+
+test('histórico confirmado solo admite día derivado de su sello, no una fecha arbitraria', async () => {
+  const a = db('A');
+  await setDoc(control(a), activo);
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const { schemaVersion, diaBosque, instante, ...legacy } = checkin();
+    await setDoc(registro(ctx.firestore()), { ...legacy, confirmadoEn: new Date('2026-11-07T02:00Z') });
+  });
+  await assertFails(updateDoc(registro(a), { schemaVersion: 1, diaBosque: '2040-01-01' }));
+  await assertSucceeds(updateDoc(registro(a), { schemaVersion: 1, diaBosque: '2026-11-06' }));
+});
+
+test('identidad visual inmutable, aislada y borrable únicamente bajo barrera', async () => {
+  const a = db('A');
+  await setDoc(control(a), activo);
+  const identidad = (d) => doc(d, 'users/A/bosque/identidad');
+  const cuerpo = { id: 'bosque-local', schemaVersion: 1, generacion: 'g1' };
+  await assertFails(setDoc(identidad(a), { ...cuerpo, peso: 50 }));
+  await assertFails(setDoc(identidad(a), { ...cuerpo, id: { nombre: 'privado' } }));
+  await assertSucceeds(setDoc(identidad(a), cuerpo));
+  for (const uid of ['B', null]) {
+    await assertFails(getDoc(identidad(db(uid))));
+    await assertFails(setDoc(identidad(db(uid)), cuerpo));
+  }
+  await assertFails(updateDoc(identidad(a), { id: 'otro' }));
+  await assertFails(deleteDoc(identidad(a)));
+  await updateDoc(control(a), { estado: 'eliminando', operacion: 'borrar' });
+  await assertSucceeds(deleteDoc(identidad(a)));
+  await assertFails(setDoc(identidad(a), cuerpo));
+});
+
+test('check-in emocional admite solo emoción estable, intensidad 1–3 y una necesidad, aislado por cuenta', async () => {
+  const a = db('A');
+  await setDoc(control(a), activo);
+  const { animo, necesidades, ...base } = checkin();
+  const emocional = { ...base, schemaVersion: 2, emocion: 'ansiosa', intensidad: 3, necesidad: 'comer' };
+  for (const cambios of [{ emocion: 'otra' }, { intensidad: 4 }, { intensidad: 0 }, { intensidad: 2.5 },
+    { necesidad: ['comer'] }, { necesidad: 'otra' }, { animo: 3 }, { necesidades: [] }, { peso: 60 },
+    { cuidado: 'x'.repeat(281) }, { instante: null }, { schemaVersion: 3 }]) {
+    await assertFails(setDoc(registro(a), { ...emocional, ...cambios }));
+  }
+  const { instante, ...sinInstante } = emocional;
+  await assertFails(setDoc(registro(a), sinInstante));
+  await assertSucceeds(setDoc(registro(a), emocional));
+  for (const uid of ['B', null]) {
+    await assertFails(getDoc(registro(db(uid))));
+    await assertFails(setDoc(registro(db(uid)), emocional));
+  }
+  await assertFails(updateDoc(registro(a), { emocion: 'contenta' }));
+  await assertFails(updateDoc(registro(a), { intensidad: 1 }));
+  await assertFails(updateDoc(registro(a), { diaBosque: '2026-11-08' }));
+  await updateDoc(control(a), { estado: 'eliminando', operacion: 'borrar' });
+  await assertFails(setDoc(doc(a, 'users/A/checkins/id2'), { ...emocional, id: 'id2' }));
 });

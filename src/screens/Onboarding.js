@@ -212,7 +212,7 @@ export default function Onboarding({ onTerminar, nubeActiva, onTengoCuenta }) {
           <Text style={s.robleNombre}>Roble</Text>
           <Texto suave>Empieza como una semilla.</Texto>
         </View>
-        <Texto suave style={s.borrador}>Tu roble crece una vez por cada día de check-in confirmado en tu cuenta.</Texto>
+        <Texto suave style={s.borrador}>Tu roble crece una vez por cada día de check-in, también sin cuenta ni conexión.</Texto>
       </>
     );
   } else {

@@ -4,6 +4,7 @@
 // Expo Crypto está disponible también en Expo Go. Los IDs se persisten antes de sync.
 import { randomUUID } from 'expo-crypto';
 import { fusionarPerfil } from './contratos-sync';
+import { migrarCalendario } from './contrato-bosque';
 
 export const COLECCIONES = ['checkins', 'cuestas', 'mental'];
 export const nuevoId = () => randomUUID();
@@ -35,13 +36,16 @@ export const tocarPerfil = () => ({ perfilActualizado: new Date().toISOString(),
 
 export function fusionar(local, remoto) {
   const salida = { ...local };
+  if (remoto.bosqueId) salida.bosqueId = remoto.bosqueId;
 
   COLECCIONES.forEach((col) => {
     const mapa = new Map();
     (local[col] || []).forEach((it) => mapa.set(it.id, it));
     (remoto[col] || []).forEach((it) => {
       const ya = mapa.get(it.id);
-      mapa.set(it.id, { ...(ya || it), ...(it._confirmadoMs != null && { _confirmadoMs: it._confirmadoMs }), _s: true }); // lo que existe en la nube ya está sincronizado
+      mapa.set(it.id, { ...(ya || it),
+        ...(col === 'checkins' && it.schemaVersion !== undefined && { schemaVersion: it.schemaVersion, diaBosque: it.diaBosque }),
+        ...(it._confirmadoMs != null && { _confirmadoMs: it._confirmadoMs }), _s: true });
     });
     salida[col] = [...mapa.values()].sort((a, b) => (clave(a) < clave(b) ? -1 : 1));
   });
@@ -77,7 +81,7 @@ export function aplicarSync(d, { remoto, subidos, perfilSubido }) {
   if (perfilSubido && (perfilSubido.operacion ? d.perfilOperacion === perfilSubido.operacion : d.perfilActualizado === perfilSubido.perfilActualizado)) {
     marcado.perfilSucio = false;
   }
-  const salida = fusionar(marcado, remoto);
+  const salida = fusionar(marcado, { ...remoto, checkins: (remoto.checkins || []).map(migrarCalendario) });
   if (remoto.perfil) {
     const base = perfilSubido?.local || d.perfilBase;
     const pendiente = d.perfilSucio && (!perfilSubido || (perfilSubido.operacion ? d.perfilOperacion !== perfilSubido.operacion : d.perfilActualizado !== perfilSubido.perfilActualizado));

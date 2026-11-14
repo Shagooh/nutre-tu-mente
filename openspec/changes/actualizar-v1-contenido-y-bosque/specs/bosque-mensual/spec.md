@@ -62,12 +62,12 @@ El sistema MUST NOT presentar el dibujo procedural o recursos de otras especies 
 - **THEN** la aceptación visual de esa especie permanece pendiente y cualquier sustituto de desarrollo se identifica como provisional
 
 ### Requirement: Calendario verificable del bosque
-El bosque SHALL derivar el día confirmado de la recepción del check-in en Firestore en America/Santiago. El teléfono SHALL guardar sin red y conservar una fecha provisional o estimada con tiempo monotónico desde una referencia reciente.
+El bosque SHALL usar la fecha de captura persistida en America/Santiago, incluso sin cuenta ni conexión. La confirmación del servidor SHALL ser independiente del crecimiento y no trasladar fechas. El contrato completo SHALL seguir `calendario-bosque` del cambio aprobado `conservar-crecimiento-offline`.
 
 #### Scenario: Reloj alterado
 - **WHEN** cambia el calendario o la zona del dispositivo entre dos registros recibidos el mismo día del bosque
-- **THEN** ambos corresponden a una sola fecha confirmada
+- **THEN** las fechas ya guardadas no cambian; una captura nueva usa la referencia monotónica reciente o una fecha local provisional si no existe
 
 #### Scenario: Sincronización tardía
 - **WHEN** una captura pendiente se sube después de perder la referencia de sesión
-- **THEN** conserva su fecha de historial sin atribuirle un día confirmado al reconectar
+- **THEN** conserva su fecha del bosque y su crecimiento provisional, sin trasladar la hoja al día de reconexión ni atribuirle confirmación retroactiva

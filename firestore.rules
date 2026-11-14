@@ -19,10 +19,52 @@ service cloud.firestore {
       return v is int && v >= 1 && v <= 5;
     }
     function fechaValida(v) {
-      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      return v is string && v.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && diaExistente(v);
+    }
+    function diaExistente(v) {
+      let partes = v.split('-');
+      let year = int(partes[0]);
+      let month = int(partes[1]);
+      let day = int(partes[2]);
+      let bisiesto = year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+      return day <= (month in [1, 3, 5, 7, 8, 10, 12] ? 31 : month == 2 ? (bisiesto ? 29 : 28) : 30);
+    }
+    function mismoDia(fecha, instante) {
+      let partes = fecha.split('-');
+      return int(partes[0]) == instante.year() && int(partes[1]) == instante.month() && int(partes[2]) == instante.day();
+    }
+    function fechaHistorica(d, anterior) {
+      // La app calcula la zona IANA exacta. Las reglas limitan la adición al
+      // día de Santiago posible con UTC-3/UTC-4; no permiten fechas arbitrarias.
+      return 'confirmadoEn' in anterior
+        ? (mismoDia(d.diaBosque, anterior.confirmadoEn - duration.value(3, 'h'))
+          || mismoDia(d.diaBosque, anterior.confirmadoEn - duration.value(4, 'h')))
+        : d.diaBosque == anterior.fecha;
     }
     function horaValida(d) {
       return !('hora' in d) || (d.hora is string && d.hora.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'));
+    }
+    function calendarioValido(d) {
+      return d.schemaVersion in [1, 2] && fechaValida(d.diaBosque)
+        && (!('instante' in d) || (d.instante is string
+          && d.instante.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9][.][0-9]{3}Z$')
+          && fechaValida(d.instante.split('T')[0])));
+    }
+    function checkinHistorico(d) {
+      return d.schemaVersion == 1
+        && d.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado', 'generacion', 'confirmadoEn', 'schemaVersion', 'diaBosque', 'instante'])
+        && escala(d.animo) && d.necesidades is list && d.necesidades.size() <= 10
+        && d.necesidades.hasOnly(['descanso', 'calma', 'compania', 'moverme', 'agua', 'espacio', 'desahogo', 'comer']);
+    }
+    function checkinEmocional(d) {
+      return d.schemaVersion == 2
+        && d.keys().hasOnly(['id', 'fecha', 'hora', 'emocion', 'intensidad', 'necesidad', 'cuidado', 'actualizado', 'generacion', 'confirmadoEn', 'schemaVersion', 'diaBosque', 'instante'])
+        && d.id is string && d.id.matches('^[A-Za-z0-9_-]{1,128}$')
+        && d.emocion in ['tranquila', 'contenta', 'cansada', 'ansiosa', 'estresada', 'triste', 'enojada', 'aburrida', 'sola', 'no-se']
+        && d.intensidad is int && d.intensidad >= 1 && d.intensidad <= 3
+        && d.necesidad in ['descansar', 'hablar', 'moverme', 'comer', 'momento', 'limite', 'no-se']
+        && 'hora' in d && 'instante' in d;
     }
     function esAhora(d) {
       // Obliga a usar la hora del servidor (serverTimestamp), no una fecha inventada.
@@ -94,6 +136,17 @@ service cloud.firestore {
         && esAhora(request.resource.data);
 
       // Check-ins diarios
+      match /bosque/{id} {
+        allow read: if esDueno(uid);
+        allow create: if esDueno(uid) && id == 'identidad'
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'schemaVersion', 'generacion'])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.id is string
+          && request.resource.data.id.matches('^[A-Za-z0-9-]{1,80}$');
+        allow update: if false;
+        allow delete: if esDueno(uid) && !activo(uid);
+      }
       match /{col}/{id} {
         // Solo una migración de metadatos para registros anteriores a generaciones.
         allow update: if esDueno(uid) && col in ['checkins', 'cuestas', 'mental']
@@ -104,17 +157,21 @@ service cloud.firestore {
       match /checkins/{id} {
         allow read: if esDueno(uid);
         allow delete: if esDueno(uid) && !activo(uid);
+        // Ampliación única de metadatos: el cuerpo, el ID y los sellos no cambian.
+        allow update: if esDueno(uid) && !('schemaVersion' in resource.data)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['schemaVersion', 'diaBosque', 'generacion'])
+          && request.resource.data.schemaVersion == 1
+          && calendarioValido(request.resource.data)
+          && fechaHistorica(request.resource.data, resource.data);
         allow create: if esDueno(uid)
           && generacionValida(uid, request.resource.data)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado', 'generacion', 'confirmadoEn'])
+          && (checkinHistorico(request.resource.data) || checkinEmocional(request.resource.data))
+          && calendarioValido(request.resource.data)
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
           && horaValida(request.resource.data)
           && (!('confirmadoEn' in request.resource.data) || request.resource.data.confirmadoEn == request.time)
-          && escala(request.resource.data.animo)
-          && request.resource.data.necesidades is list
-          && request.resource.data.necesidades.size() <= 10
-          && request.resource.data.necesidades.hasOnly(['descanso', 'calma', 'compania', 'moverme', 'agua', 'espacio', 'desahogo', 'comer'])
           && (!('cuidado' in request.resource.data) || texto(request.resource.data.cuidado, 280))
           && esAhora(request.resource.data);
       }

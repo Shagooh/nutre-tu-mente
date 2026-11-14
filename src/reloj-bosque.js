@@ -21,9 +21,13 @@ export function crearReloj(monotono, idSesion) {
   }
   return {
     capturar() {
-      const ms = estimacion();
+      const ms = estimacion() ?? Date.now();
+      const calendario = calendarioBosque(ms);
       return {
-        ...calendarioBosque(ms ?? Date.now()),
+        ...calendario,
+        schemaVersion: 1,
+        diaBosque: calendario.fecha,
+        instante: new Date(ms).toISOString(),
         _captura: { sesion, tick: monotono() },
       };
     },

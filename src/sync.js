@@ -4,6 +4,7 @@ import { COLECCIONES, limpiar } from './fusion';
 import { conflicto, fusionarPerfil, iguales } from './contratos-sync';
 
 import { relojBosque } from './reloj-bosque';
+import { identidadBosqueValida, migrarCalendario } from './contrato-bosque';
 
 const controlRef = (uid) => doc(db, 'syncControls', uid);
 const asegurarControl = (snap, generacion) => {
@@ -39,9 +40,23 @@ export async function obtenerControl(uid) {
 export async function sincronizar(uid, d) {
   const generacion = d.nubeGeneracion;
   if (!generacion) throw conflicto('sync/generation');
+  if (d.cuentaUid !== uid || d.borrado) throw conflicto('sync/session-required');
+  if (!identidadBosqueValida(d.bosqueId)) throw conflicto();
+  const bosqueId = await runTransaction(db, async (tx) => {
+    asegurarControl(await tx.get(controlRef(uid)), generacion);
+    const ref = doc(db, 'users', uid, 'bosque', 'identidad');
+    const snap = await tx.get(ref);
+    if (snap.exists()) {
+      if (snap.data().generacion !== generacion || !identidadBosqueValida(snap.data().id)) throw conflicto();
+      return snap.data().id;
+    }
+    tx.set(ref, { id: d.bosqueId, schemaVersion: 1, generacion });
+    return d.bosqueId;
+  });
   const subidos = {};
   for (const col of COLECCIONES) {
-    for (const it of (d[col] || []).filter((x) => !x._s)) {
+    for (const original of (d[col] || []).filter((x) => !x._s || (col === 'checkins' && x.schemaVersion === undefined))) {
+      const it = col === 'checkins' ? migrarCalendario(original) : original;
       await runTransaction(db, async (tx) => {
         const control = await tx.get(controlRef(uid));
         asegurarControl(control, generacion);
@@ -50,8 +65,12 @@ export async function sincronizar(uid, d) {
         const cuerpo = { ...limpiar(it), generacion };
         if (existente.exists()) {
           const { actualizado, confirmadoEn, generacion: anterior, ...guardado } = existente.data();
-          if (!iguales(limpiar(it), guardado) || (anterior && anterior !== generacion)) throw conflicto();
-          if (!anterior) tx.update(ref, { generacion });
+          const comparable = col === 'checkins' ? limpiar(migrarCalendario({ ...guardado,
+            ...(confirmadoEn?.toMillis && { _confirmadoMs: confirmadoEn.toMillis() }) })) : guardado;
+          if (!iguales(limpiar(it), comparable) || (anterior && anterior !== generacion)) throw conflicto();
+          const metadatos = col === 'checkins' && guardado.schemaVersion === undefined
+            ? { schemaVersion: it.schemaVersion, diaBosque: it.diaBosque } : {};
+          if (!anterior || Object.keys(metadatos).length) tx.update(ref, { generacion, ...metadatos });
         } else {
           if (col === 'checkins' && relojBosque.reciente(it._captura)) cuerpo.confirmadoEn = serverTimestamp();
           tx.set(ref, { ...cuerpo, actualizado: serverTimestamp() });
@@ -88,18 +107,37 @@ export async function sincronizar(uid, d) {
   // una escritura concurrente. Optimizar solo con cursores independientes.
   for (const col of COLECCIONES) {
     const snap = await getDocs(collection(db, 'users', uid, col));
-    snap.forEach((s) => {
+    for (const s of snap.docs) {
       const { actualizado, confirmadoEn, generacion: g, ...resto } = s.data();
-      if (g && g !== generacion) return;
+      if (g && g !== generacion) continue;
       const ms = confirmadoEn?.toMillis?.();
       if (col === 'checkins' && Number.isFinite(ms) && !s.metadata?.hasPendingWrites) {
         resto._confirmadoMs = ms;
       }
-      remoto[col].push({ ...resto, id: s.id });
-    });
+      let registro = { ...resto, id: s.id };
+      if (col === 'checkins') {
+        registro = migrarCalendario(registro);
+        if (resto.schemaVersion === undefined) {
+          // El pull también migra históricos que este dispositivo nunca subió.
+          await runTransaction(db, async (tx) => {
+            asegurarControl(await tx.get(controlRef(uid)), generacion);
+            const ref = doc(db, 'users', uid, col, s.id);
+            const actual = await tx.get(ref);
+            if (!actual.exists()) throw conflicto();
+            const cuerpo = actual.data();
+            if (cuerpo.schemaVersion === undefined) tx.update(ref, {
+              schemaVersion: 1, diaBosque: registro.diaBosque, generacion,
+            });
+            else if (cuerpo.diaBosque !== registro.diaBosque) throw conflicto();
+          });
+        }
+      }
+      remoto[col].push(registro);
+    }
   }
   const perfil = await getDoc(doc(db, 'users', uid));
   if (perfil.exists()) Object.assign(remoto, perfil.data());
+  remoto.bosqueId = bosqueId;
   asegurarControl(await getDoc(controlRef(uid)), generacion);
   remoto.ultimaSync = Date.now();
   return { remoto, subidos, perfilSubido };
@@ -120,7 +158,7 @@ export async function borrarNube(uid, operacion) {
   });
   const estado = (await getDoc(ref)).data();
   if (estado.estado === 'borrado') return;
-  for (const col of COLECCIONES) {
+  for (const col of [...COLECCIONES, 'bosque']) {
     const snap = await getDocs(collection(db, 'users', uid, col));
     for (let i = 0; i < snap.docs.length; i += 400) {
       const lote = writeBatch(db);

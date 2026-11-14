@@ -86,7 +86,7 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
         <Respiracion segundos={60} onTerminar={() => setRespiro(true)} />
         {respiro ? <Texto style={{ textAlign: 'center' }}>Muy bien 🌿 Lo hiciste.</Texto> : null}
         <Texto suave style={{ textAlign: 'center', fontSize: 14, marginTop: 8 }}>
-          Si hoy no puedes, puedes continuar sin respirar.
+          Puedes omitir este paso.
         </Texto>
       </>
     );
