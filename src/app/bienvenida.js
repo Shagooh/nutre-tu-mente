@@ -4,6 +4,6 @@ import { useEstadoApp } from '../estado-app';
 import { nubeActiva } from '../firebase';
 
 export default function BienvenidaRoute() {
-  const { terminarOnboarding } = useEstadoApp();
-  return <Onboarding onTerminar={terminarOnboarding} nubeActiva={nubeActiva} onTengoCuenta={() => router.push('/cuenta')} />;
+  const { terminarOnboarding, terminarRevision } = useEstadoApp();
+  return <Onboarding onTerminar={terminarOnboarding} onTerminarRevision={terminarRevision} nubeActiva={nubeActiva} onTengoCuenta={() => router.push('/cuenta')} />;
 }

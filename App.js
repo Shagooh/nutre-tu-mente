@@ -12,6 +12,8 @@ import { conflicto, iguales } from './src/contratos-sync';
 import { programarRecordatorios } from './src/notifications';
 import { detenerReportes, iniciarReportes } from './src/reportes';
 import { color } from './src/theme';
+import { revisionDiagnostico } from './src/modo-revision';
+import { crearPerfilRevision } from './src/contrato-incorporacion';
 
 // Única instancia de almacenamiento/sesión. Router vive en src/app/.
 export default Sentry.wrap(function App({ children }) {
@@ -29,6 +31,9 @@ export default Sentry.wrap(function App({ children }) {
 
   const cambiarPerfil = (cambios) => actualizar((d) => ({ perfil: { ...d.perfil, ...cambios }, ...tocarPerfil() }));
   const acciones = {
+    ...(revisionDiagnostico && {
+      terminarRevision: (nombre, incorporacion) => actualizar(() => ({ perfil: crearPerfilRevision(nombre, incorporacion) })),
+    }),
     terminarOnboarding: (perfil, espacio) => actualizar(() => ({ perfil,
       mental: [{ id: nuevoId(), fecha: hoyISO(), valor: espacio }], ...tocarPerfil() })),
     cambiarPerfil,

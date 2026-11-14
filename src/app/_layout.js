@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import App from '../../App';
 import { useEstadoApp } from '../estado-app';
 import AperturaNotificaciones from '../components/AperturaNotificaciones';
+import { revisionDiagnostico } from '../modo-revision';
 
 export const unstable_settings = { initialRouteName: '(tabs)' };
 function Navegador() {
@@ -20,7 +21,7 @@ function Navegador() {
       <Stack.Protected guard={!datos.perfil}>
         <Stack.Screen name="bienvenida" />
       </Stack.Protected>
-      <Stack.Screen name="cuenta" />
+      <Stack.Protected guard={!revisionDiagnostico}><Stack.Screen name="cuenta" /></Stack.Protected>
     </Stack>
     <AperturaNotificaciones />
   </>;

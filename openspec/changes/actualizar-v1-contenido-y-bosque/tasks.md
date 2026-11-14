@@ -37,8 +37,8 @@ Cada tarea está acotada a 2 horas como máximo; dividir si la ejecución revela
 Coordinación aprobada el 13-11-2026: las tareas 1.2/2.2/3.1 de `conservar-crecimiento-offline` implementan el contrato temporal, su migración y reglas. 5.2/5.3/5.7 siguen pendientes para el resto del dominio V1; no se marcan completas por resolver solo calendario e identidad visual. El crecimiento por servidor de 8.11–8.12 queda sustituido por la propuesta offline aprobada.
 
 - [ ] 5.1 [Equipo clínico y desarrollo] Revisar ampliación de datos B9 y consentimiento; verificar aprobación escrita y proponer modificación de constitución por separado antes de activar diario/diagnóstico nuevo (1 h de preparación).
-- [ ] 5.2 Definir esquema versionado de perfil, check-in y árbol; verificar fixtures válidos e inválidos y mantener explícitas las dos escalas de espacio mental (2 h).
-- [ ] 5.3 Implementar migración local idempotente con IDs históricos; probar dos ejecuciones, blob ilegible y escritura fallida sin pérdida (2 h).
+- [x] 5.2 Definir esquema versionado de perfil, check-in y árbol; verificar fixtures válidos e inválidos y mantener explícitas las dos escalas de espacio mental (2 h).
+- [x] 5.3 Implementar migración local idempotente con IDs históricos; probar dos ejecuciones, blob ilegible y escritura fallida sin pérdida (2 h).
 - [x] 5.4 Extraer catálogo de bienvenida, diagnóstico y preferencias con fuente/estado/variante; verificar texto contra secciones 2–4 y detectar faltantes (2 h).
 - [x] 5.5 Extraer emociones, necesidades y respuestas especiales; probar precedencia y diez emociones con colores, sin cambios clínicos inventados (2 h).
 - [ ] 5.6 Extraer frases y mapa de temas a cápsulas 1–4; probar agotamiento por estilo y sugerencias sin repetición semanal (2 h).
@@ -90,6 +90,8 @@ Coordinación aprobada el 13-11-2026: las tareas 1.2/2.2/3.1 de `conservar-creci
 - [ ] 9.5 Preparar propuesta siguiente de herramientas, diario, audios, semana, logros, recordatorios y edición editorial; verificar cobertura contra secciones 5 y 9–14 sin incluir Fase 2 (2 h).
 
 ## Workflow follow-up
+
+- 5.2 y 5.3: contrato de perfil inicial con incorporación versionada, check-in emocional v2 y elección mensual de árbol; fixtures válidos e inválidos. La migración local versiona el contenedor histórico, conserva sus IDs, su flor y la escala de seguimiento y se prueba con doble carga, JSON ilegible y escritura fallida. La sesión de revisión usa memoria y termina en Inicio. 5.1 y 5.7 siguen abiertos.
 
 - Evidencia del 14-11-2026 para 5.4: `catalogo-incorporacion.test.js` coteja la copia y las tablas con la referencia del 26-10. Los faltantes de consentimiento, resultado, edad y trato están registrados en el catálogo y en `docs/CHECKLIST-V1-DIAGNOSTICO.md`. Continúan pendientes la aprobación clínica, 5.1 y el recorrido real de las doce preguntas.
 

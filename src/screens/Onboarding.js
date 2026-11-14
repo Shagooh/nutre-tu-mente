@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import BellotaRoble from '../components/BellotaRoble';
+import RevisionDiagnostico from './RevisionDiagnostico';
 import { Barra, Boton, Escala, Opcion, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
 import { ESTILOS, MOMENTOS, OBJETIVOS, SLOTS } from '../content';
 import { BIENVENIDA } from '../content/bienvenida';
@@ -9,7 +10,7 @@ import { color } from '../theme';
 
 const TOTAL = 9;
 
-export default function Onboarding({ onTerminar, nubeActiva, onTengoCuenta }) {
+export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva, onTengoCuenta }) {
   const [paso, setPaso] = useState(0);
   const [intro, setIntro] = useState(0);
   const [enBienvenida, setEnBienvenida] = useState(true);
@@ -71,6 +72,9 @@ export default function Onboarding({ onTerminar, nubeActiva, onTengoCuenta }) {
 
   let contenido;
   let puedeSeguir = true;
+  if (onTerminarRevision && !enBienvenida && paso === 1 && acepto) {
+    return <RevisionDiagnostico onTerminar={onTerminarRevision} />;
+  }
 
   if (enBienvenida) {
     const pagina = BIENVENIDA.pantallas[intro];
@@ -107,7 +111,7 @@ export default function Onboarding({ onTerminar, nubeActiva, onTengoCuenta }) {
           </Texto>
         </Tarjeta>
         <Texto suave style={{ marginBottom: 14 }}>
-          {nubeActiva
+          {onTerminarRevision ? 'Revisión con datos ficticios. Tus respuestas se conservan en memoria hasta que recargues la app.' : nubeActiva
             ? 'Por defecto guardamos todo solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. Si más adelante creas una cuenta (es opcional), también guardaremos una copia en la nube de Google (Firebase) para que no la pierdas. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'
             : 'Guardamos solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'}
         </Texto>

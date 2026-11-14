@@ -1,9 +1,11 @@
 import { Platform } from 'react-native';
+import { revisionDiagnostico } from './modo-revision';
 import { SLOTS } from './content';
 import { DESTINOS_RECORDATORIOS, destinoNotificacion } from './navegacion';
 
 // Se carga solo cuando hace falta, y nunca rompe la app si no está disponible.
 function modulo() {
+  if (revisionDiagnostico) return null;
   try {
     return require('expo-notifications');
   } catch {

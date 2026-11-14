@@ -64,6 +64,9 @@ test('perfil solo permite revisión consecutiva y generación vigente', async ()
   await assertFails(setDoc(ref, perfil));
   await assertSucceeds(setDoc(ref, { ...perfil, revision: 2 }));
   await assertFails(setDoc(ref, { ...perfil, revision: 3, perfil: { ...perfil.perfil, peso: 60 } }));
+  await assertFails(setDoc(ref, { ...perfil, revision: 3, perfil: {
+    ...perfil.perfil, schemaVersion: 1, incorporacion: { diagnostico: { 'diag-1': ['poco'] } },
+  } }));
   await assertFails(setDoc(ref, { ...perfil, revision: 3, perfil: { ...perfil.perfil, recordatorios: [{ id: 'tarde', h: 18, m: 0, activo: true, peso: 60 }] } }));
   await assertFails(setDoc(ref, { ...perfil, revision: 3, perfil: { ...perfil.perfil, objetivo: { peso: 60 } } }));
 });

@@ -52,8 +52,8 @@ En `src/content/incorporacion.js` quedan identificadas seis piezas con variantes
 - [ ] Derivación tras una señal de la 12, con textos, enlaces y destinos revisados; posibilidad de continuar solo con funciones de calma. Tarea 6.6.
 - [ ] Menores de 18 no pueden continuar; mensaje revisado por el equipo clínico. Tarea 6.6.
 - [ ] Restricciones de edad/derivación también al abrir un enlace, aviso, restaurar sesión o cambiar cuenta. La protección actual de Router solo exige perfil; no cubre estas restricciones. Tarea 6.6.
-- [ ] Contrato versionado del perfil/diagnóstico, fixtures válidos e inválidos y escala inicial de cuatro opciones separada del seguimiento de cinco. Tarea 5.2.
-- [ ] Migración idempotente de perfiles históricos sin inventar respuestas ni forzar otro onboarding; conservar blob anterior si falla lectura/escritura. Tarea 5.3. La migración de calendario ya hecha no cierra la del diagnóstico.
+- [x] Contrato versionado del perfil/diagnóstico, fixtures válidos e inválidos y escala inicial de cuatro opciones separada del seguimiento de cinco. Tarea 5.2.
+- [x] Migración idempotente de perfiles históricos sin inventar respuestas ni forzar otro onboarding; conservar blob anterior si falla lectura/escritura. Tarea 5.3. Ver las pruebas de contrato y migración del contenedor histórico en `contrato-incorporacion.test.js`.
 - [ ] Reglas Firestore y sync del diagnóstico: lista cerrada de campos, aislamiento A/B, reintento, conflicto y borrado. Tarea 5.7. Hoy las reglas del perfil solo admiten los campos históricos y rechazan campos nuevos de diagnóstico.
 - [ ] Persistencia y reinicio del diagnóstico sin cuenta/red; recuperación de errores y restauración en otro cliente autorizado. Tareas 5.3/5.7 y verificación integrada.
 - [ ] Revisión clínica de preguntas, resultados, consentimiento y derivación con fecha/responsable/alcance. Tarea 9.4. Recibir documentos o aprobar desarrollo no sustituye esa validación.
@@ -83,7 +83,7 @@ Recetas, comunidad, chat, widgets y organización quedan fuera de este increment
 ## Orden para dejar el diagnóstico completo
 
 1. Resolver 5.1 con el equipo clínico y ambas personas de desarrollo y registrar la aprobación necesaria. Usar el catálogo de 5.4 para revisar las variantes y los textos pendientes.
-2. Completar contrato, migración y reglas/sync (5.2–5.3/5.7), con pruebas de compatibilidad y aislamiento.
+2. Extender reglas y sincronización al contrato acordado tras 5.1 (5.7). Contrato y migración local comprobados en 5.2–5.3.
 3. Implementar preguntas 1–5 y 6–12 (6.4–6.5), resultado y preferencias (6.7–6.8), con los escenarios de cada fila.
 4. Integrar derivación/edad y protección por rutas (6.6), solo con los textos aprobados. No activar el diagnóstico sin sus salidas de riesgo.
 5. Ejecutar verificación integrada y validación clínica (9.1–9.4). Entonces revisar cada casilla con evidencia y declarar el diagnóstico completo.
@@ -91,3 +91,11 @@ Recetas, comunidad, chat, widgets y organización quedan fuera de este increment
 La revisión anterior al catálogo quedó en 29/55 tareas con 20 suites/165 pruebas, 10 pruebas de reglas en emulador local, lint, typecheck gradual, OpenSpec estricto y exportaciones web/Android aprobados.
 
 Con 5.4 completada, OpenSpec confirma 30/55. Pasaron las 21 suites de Jest (173 pruebas), lint, typecheck gradual y OpenSpec 1.14.3 estricto (6/6). El incremento fue exclusivamente editorial; no se repitieron emulador de reglas, exportaciones ni pruebas en teléfonos.
+
+### Ensayo local del cuestionario
+
+**Decisiones para cerrar 5.1 y 6.6.** El equipo clínico y ambas personas de desarrollo deben registrar fecha, responsables y alcance del acuerdo sobre B9. El contrato técnico distingue respuestas omitidas, preferencias, rango etario y señales declaradas en la pregunta 12. Queda por acordar qué se conserva de esa señal, durante cuánto tiempo y qué llega a la copia opcional en la nube. Antes de ampliar las reglas, revisar la casilla y el aviso con esa decisión. Para derivación faltan la aprobación del texto, el destino de «Agendar con Nutrimind», el recurso de «Ver dónde pedir ayuda» y la redacción para menores. Las respuestas de prueba no constituyen consentimiento para ese uso.
+
+En desarrollo, iniciar Expo con `EXPO_PUBLIC_REVISION_DIAGNOSTICO=1` y abrir `/bienvenida`. La bienvenida y el consentimiento dan paso a las doce preguntas. La pregunta 12 con Ninguna permite seguir al apodo ficticio, el resultado y las siete preferencias. Tras confirmar el roble, Ir a Inicio abre las pestañas reales de la app. Una señal en la 12 o la edad menor de 18 detiene la revisión. Al recargar se descarta la sesión completa, incluidos sus check-ins. La cuenta y los avisos del dispositivo están desactivados en este modo.
+
+La prueba de Router recorre el consentimiento, diagnóstico, resultado Bienestar con apodo, preferencias y llegada a Inicio. Las pruebas de dominio y pantalla cubren omisiones, exclusiones, límites, ambos bloqueos y los tres perfiles. En navegador se comprobó la bienvenida y el consentimiento deshabilitado antes de marcar la casilla. 5.2 y 5.3 completadas en local. El recorrido habitual mantiene la encuesta histórica y las reglas remotas rechazan el perfil de revisión.

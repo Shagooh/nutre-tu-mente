@@ -20,6 +20,8 @@ import { relojBosque } from '../reloj-bosque';
 let mockDatos;
 let mockSetDatos;
 let mockNotificar;
+let mockRevision = false;
+jest.mock('../modo-revision', () => ({ get revisionDiagnostico() { return mockRevision; } }));
 const mockActualizar = jest.fn(async () => {});
 jest.mock('../store', () => ({
   ...jest.requireActual('../store'),
@@ -45,8 +47,47 @@ const rutas = {
   progreso: Progreso, bosque: Bosque, 'leccion/[id]': Leccion, bienvenida: Bienvenida,
 };
 beforeEach(() => {
+  mockRevision = false;
   mockDatos = { ...datosVacios(), perfil: { nombre: 'Prueba', flor: 'roble', estilo: 'autocuidado', recordatorios: [], consentimiento: '2026-11-14' } };
   jest.clearAllMocks();
+});
+
+test('la revisión integrada exige consentimiento, usa el apodo y abre las pestañas con una sesión ficticia', async () => {
+  mockRevision = true;
+  mockDatos.perfil = null;
+  mockActualizar.mockImplementationOnce(async fn => {
+    mockDatos = { ...mockDatos, ...fn(mockDatos) };
+    mockSetDatos(mockDatos);
+  });
+  renderRouter(rutas, { initialUrl: '/bienvenida' });
+  const tocar = texto => fireEvent.press(screen.getByText(texto));
+  tocar('Saltar bienvenida');
+  expect(screen.getByRole('button', { name: 'Acepto y continúo' })).toBeDisabled();
+  fireEvent.press(screen.getByRole('checkbox'));
+  tocar('Acepto y continúo');
+  tocar('Probar con datos ficticios');
+  for (let n = 1; n <= 11; n++) {
+    if (n === 10) {
+      tocar('Cuidar solo mi salud mental');
+      tocar('Continuar');
+    } else tocar('Saltar');
+    if ([5, 8].includes(n)) tocar('Continuar');
+  }
+  tocar('Ninguna');
+  tocar('Continuar');
+  fireEvent.changeText(screen.getByLabelText('Apodo ficticio'), 'Luz');
+  tocar('Continuar');
+  expect(screen.getByText(/^Luz, te haces cargo/)).toBeTruthy();
+  tocar('Empezar');
+  for (const respuesta of ['Neutro ("te sientes con cansancio")', '25–34', null,
+    'Afirmaciones ("Mi cuerpo no define mi valor.")', 'Textos cortos', '1 minuto', null]) {
+    if (respuesta) { tocar(respuesta); tocar('Continuar'); } else tocar('Saltar');
+  }
+  await act(async () => tocar('Ir a Inicio'));
+  expect(screen).toHavePathname('/');
+  expect(screen.getByLabelText('Perfil')).toBeTruthy();
+  expect(mockDatos.perfil.nombre).toBe('Luz');
+  expect(mockDatos.mental).toEqual([]);
 });
 afterEach(() => jest.restoreAllMocks());
 
