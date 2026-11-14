@@ -39,7 +39,7 @@ Coordinación aprobada el 13-11-2026: las tareas 1.2/2.2/3.1 de `conservar-creci
 - [ ] 5.1 [Equipo clínico y desarrollo] Revisar ampliación de datos B9 y consentimiento; verificar aprobación escrita y proponer modificación de constitución por separado antes de activar diario/diagnóstico nuevo (1 h de preparación).
 - [ ] 5.2 Definir esquema versionado de perfil, check-in y árbol; verificar fixtures válidos e inválidos y mantener explícitas las dos escalas de espacio mental (2 h).
 - [ ] 5.3 Implementar migración local idempotente con IDs históricos; probar dos ejecuciones, blob ilegible y escritura fallida sin pérdida (2 h).
-- [ ] 5.4 Extraer catálogo de bienvenida, diagnóstico y preferencias con fuente/estado/variante; verificar texto contra secciones 2–4 y detectar faltantes (2 h).
+- [x] 5.4 Extraer catálogo de bienvenida, diagnóstico y preferencias con fuente/estado/variante; verificar texto contra secciones 2–4 y detectar faltantes (2 h).
 - [x] 5.5 Extraer emociones, necesidades y respuestas especiales; probar precedencia y diez emociones con colores, sin cambios clínicos inventados (2 h).
 - [ ] 5.6 Extraer frases y mapa de temas a cápsulas 1–4; probar agotamiento por estilo y sugerencias sin repetición semanal (2 h).
 - [ ] 5.7 Extender reglas y sync del nuevo dominio; probar campos nuevos autorizados, campos prohibidos y acceso cruzado antes del cliente de staging (2 h).
@@ -90,6 +90,8 @@ Coordinación aprobada el 13-11-2026: las tareas 1.2/2.2/3.1 de `conservar-creci
 - [ ] 9.5 Preparar propuesta siguiente de herramientas, diario, audios, semana, logros, recordatorios y edición editorial; verificar cobertura contra secciones 5 y 9–14 sin incluir Fase 2 (2 h).
 
 ## Workflow follow-up
+
+- Evidencia del 14-11-2026 para 5.4: `catalogo-incorporacion.test.js` coteja la copia y las tablas con la referencia del 26-10. Los faltantes de consentimiento, resultado, edad y trato están registrados en el catálogo y en `docs/CHECKLIST-V1-DIAGNOSTICO.md`. Continúan pendientes la aprobación clínica, 5.1 y el recorrido real de las doce preguntas.
 
 - Evidencia del 14-11-2026 para 8.7: ruta protegida `/bosque`, acceso desde Inicio, resumen de tres emociones ganadoras por día, cambio de diciembre a enero con semilla nueva y recuperación del mes anterior. Pruebas de regreso hoja → cuidado → misma hoja, días 30/31, históricos y cambio de almacenamiento. Jest: 20 suites/165 pruebas; lint, typecheck y exportaciones web/Android aprobados. 8.6 conserva pendiente diario/lector real; 6.1 y 7.2 siguen pendientes. Ver `docs/CHECKIN-HOJA.md` y `docs/CHECKLIST-V1-DIAGNOSTICO.md`.
 

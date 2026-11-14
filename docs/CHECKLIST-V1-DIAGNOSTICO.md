@@ -32,7 +32,10 @@ Revisión del **14-11-2026** del código local de `feature/actualizacion-v1-nutr
 ## Diagnóstico completo: recorrido y contenido
 
 - [x] Cuatro bienvenidas saltables y aceptación obligatoria del consentimiento actual: cubiertas por `onboarding-roble.test.js`. Los textos continúan en revisión; no se cierra por ello 6.3 completo.
-- [ ] Catálogo versionado de preguntas/opciones, validaciones, resultados y preferencias, con fuente exacta, estado editorial y variantes; detectar textos/variantes faltantes sin inventarlos. Tarea 5.4.
+- [x] Catálogo editorial de las secciones 2–4 (5.4). La prueba `src/__tests__/catalogo-incorporacion.test.js` coteja las cuatro bienvenidas, consentimiento y transición, las doce preguntas con todas sus opciones en orden, ambas validaciones intermedias, nombre, tres resultados y siete preferencias con el documento del 26-10. Las doce filas anteriores evalúan el recorrido en la app y siguen abiertas.
+
+En `src/content/incorporacion.js` quedan identificadas seis piezas con variantes masculina y neutra pendientes, así como el texto de orientación a menores y el resultado Conciencia cuando se omite el momento o se eligen varios. La fuente describe la casilla de consentimiento sin fijar su redacción y ofrece dos avisos distintos en §2 y §14. El catálogo conserva el aviso de §2 para revisión. La bienvenida provisional identifica su título añadido en la cuarta pantalla.
+
 - [ ] Una pregunta por pantalla y barra de avance específica de las doce preguntas; Atrás conserva selecciones y no duplica respuestas. Tareas 6.4–6.5.
 - [ ] Saltar 1–11 conserva omisiones explícitas, no respuestas preseleccionadas; saltar la 10 asigna solo el perfil por defecto, sin inventar su respuesta. Tarea 6.5.
 - [ ] Validación intermedia tras 5 y tras 8 con texto de la fuente y aprobación clínica registrada. Tareas 6.4–6.5.
@@ -79,10 +82,12 @@ Recetas, comunidad, chat, widgets y organización quedan fuera de este increment
 
 ## Orden para dejar el diagnóstico completo
 
-1. Resolver 5.1 con el equipo clínico y ambas personas de desarrollo; registrar la aprobación necesaria. Preparar en paralelo el catálogo de 5.4 y las decisiones editoriales faltantes.
+1. Resolver 5.1 con el equipo clínico y ambas personas de desarrollo y registrar la aprobación necesaria. Usar el catálogo de 5.4 para revisar las variantes y los textos pendientes.
 2. Completar contrato, migración y reglas/sync (5.2–5.3/5.7), con pruebas de compatibilidad y aislamiento.
 3. Implementar preguntas 1–5 y 6–12 (6.4–6.5), resultado y preferencias (6.7–6.8), con los escenarios de cada fila.
 4. Integrar derivación/edad y protección por rutas (6.6), solo con los textos aprobados. No activar el diagnóstico sin sus salidas de riesgo.
 5. Ejecutar verificación integrada y validación clínica (9.1–9.4). Entonces revisar cada casilla con evidencia y declarar el diagnóstico completo.
 
-Verificación de esta revisión: 20 suites/165 pruebas, 10 pruebas de reglas en emulador local, lint, typecheck gradual, OpenSpec estricto y exportaciones web/Android aprobados. **Estas comprobaciones no prueban un diagnóstico que todavía no existe.** El cambio principal queda en 29/55 tareas; no se modificó la versión 1.0.1 ni se autorizó una publicación.
+La revisión anterior al catálogo quedó en 29/55 tareas con 20 suites/165 pruebas, 10 pruebas de reglas en emulador local, lint, typecheck gradual, OpenSpec estricto y exportaciones web/Android aprobados.
+
+Con 5.4 completada, OpenSpec confirma 30/55. Pasaron las 21 suites de Jest (173 pruebas), lint, typecheck gradual y OpenSpec 1.14.3 estricto (6/6). El incremento fue exclusivamente editorial; no se repitieron emulador de reglas, exportaciones ni pruebas en teléfonos.

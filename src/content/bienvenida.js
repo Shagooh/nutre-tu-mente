@@ -6,6 +6,13 @@ export const BIENVENIDA = {
   estado: 'pendiente-revision-clinica',
   fase: 'V1',
   trato: 'neutro',
+  siguiente: 'Siguiente',
+  saltar: 'Saltar',
+  consentimiento: {
+    aviso: 'Esta app acompaña, no reemplaza la atención profesional.',
+    boton: 'Acepto y continúo',
+  },
+  transicion: 'Ahora te haremos unas preguntas para conocerte. Toma 3 minutos y puedes cambiar todo después.',
   pantallas: [
     {
       titulo: 'Respira. Estás en el lugar correcto.',
@@ -20,6 +27,7 @@ export const BIENVENIDA = {
       texto: 'Basada en mindful eating, alimentación intuitiva y regulación emocional.',
     },
     {
+      // Título de interfaz de la entrega provisional, añadido fuera del documento.
       titulo: 'Un espacio para acompañarte',
       funciones: [
         ['¿Cómo estás hoy?', 'Un check-in de 1 minuto.'],
