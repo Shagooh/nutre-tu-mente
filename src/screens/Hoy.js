@@ -1,14 +1,16 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { relojBosque } from '../reloj-bosque';
+import { diaDelBosque } from '../contrato-bosque';
 import Planta from '../components/Planta';
 import { Boton, Pantalla, Tarjeta, Texto } from '../components/ui';
 import { LECCIONES, OBJETIVOS } from '../content';
-import { cuestasUltimaSemana, fraseDelDia, hoyISO, puntos, saludo } from '../logic';
+import { cuestasUltimaSemana, fraseDelDia, puntos, saludo } from '../logic';
 import { color } from '../theme';
 
 export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve, onAbrir, onIrALecciones }) {
   const { perfil } = datos;
-  const hoy = hoyISO();
-  const hechoHoy = datos.checkins.some((c) => c.fecha === hoy);
+  const hoy = relojBosque.hoy();
+  const hechoHoy = datos.checkins.some((c) => diaDelBosque(c) === hoy);
   const objetivo = OBJETIVOS.find((o) => o.id === perfil.objetivo);
   const sugerida = LECCIONES.find((l) => l.id === objetivo?.leccion && !datos.lecciones.includes(l.id))
     || LECCIONES.find((l) => !datos.lecciones.includes(l.id));
@@ -33,7 +35,8 @@ export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve
         <Text style={s.frase}>“{fraseDelDia(perfil.estilo)}”</Text>
       </Tarjeta>
 
-      <Planta flor={perfil.flor} pts={puntos(datos)} grande />
+      <Planta bosqueId={datos.bosqueId} uid={datos.cuentaUid} checkins={datos.checkins} flor={perfil.flor} pts={perfil.flor === 'roble' ? undefined : puntos(datos)} grande />
+      {perfil.flor === 'roble' ? <Boton titulo="Mi bosque" variante="suave" onPress={() => onAbrir('bosque')} /> : null}
 
       <Boton titulo="Me está costando" variante="acento" onPress={() => onAbrir('cuesta')} style={s.grande} />
       <Texto suave style={s.nota}>Respiramos juntas, sin juicio.</Texto>

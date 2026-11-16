@@ -6,7 +6,7 @@ import { correoValido, mensajeError } from '../errores';
 import { color } from '../theme';
 
 // Acceso con correo y contraseña. Es opcional: la app funciona sin cuenta.
-export default function Cuenta({ usuario, estadoSync, conflicto, onCerrar, onSalir, onSincronizar, onEliminar }) {
+export default function Cuenta({ usuario, estadoSync, conflicto, onCerrar, onSalir, onSincronizar, onEliminar, onVincular, onUsarPerfilNube }) {
   const [modo, setModo] = useState('entrar'); // 'entrar' | 'crear' | 'recuperar'
   const [correo, setCorreo] = useState('');
   const [clave, setClave] = useState('');
@@ -95,6 +95,21 @@ export default function Cuenta({ usuario, estadoSync, conflicto, onCerrar, onSal
           {pista ? <Texto style={{ fontSize: 14, marginTop: 8, color: '#A33A2A' }}>{pista}</Texto> : null}
         </Tarjeta>
         <Boton titulo="Sincronizar ahora" variante="suave" onPress={onSincronizar} style={{ marginBottom: 10 }} />
+        {estadoSync.codigo === 'sync/profile-conflict' ? (
+          <Tarjeta>
+            <Texto>Hay cambios incompatibles entre el teléfono y la nube. No sobrescribimos tus datos. Puedes conservarlos aquí o reemplazar solo tus preferencias con las de la nube; tus registros no se borran.</Texto>
+            <Boton titulo="Confirmar: usar preferencias de la nube" onPress={() => ejecutar(onUsarPerfilNube)} disabled={cargando} />
+            {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+          </Tarjeta>
+        ) : null}
+        {estadoSync.codigo === 'sync/conflict' ? <Texto>Un registro tiene el mismo identificador y un contenido diferente. Conservamos ambas copias sin sobrescribirlas. Contacta al soporte para revisar el conflicto.</Texto> : null}
+        {['sync/link-required', 'sync/deleting', 'sync/generation'].includes(estadoSync.codigo) ? (
+          <Tarjeta>
+            <Texto>La copia anterior está desvinculada o fue borrada. Solo si lo confirmas se asociarán estos datos a esta cuenta.</Texto>
+            <Boton titulo="Confirmar: vincular estos datos" onPress={() => ejecutar(onVincular)} disabled={cargando} />
+            {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+          </Tarjeta>
+        ) : null}
         <Boton titulo="Cerrar sesión" variante="suave" onPress={onSalir} style={{ marginBottom: 20 }} />
 
         <Tarjeta>

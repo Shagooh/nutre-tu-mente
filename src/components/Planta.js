@@ -1,17 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { color } from '../theme';
 import { etapaPlanta } from '../logic';
+import RobleMensual from './RobleMensual';
 
 // La planta crece con el cuidado. Nunca se debilita si un día no entras.
-export default function Planta({ flor, pts, grande }) {
+export default function Planta({ flor, pts, grande, bosqueId, uid, checkins }) {
+  if (flor === 'roble') return <RobleMensual key={bosqueId || uid} bosqueId={bosqueId || uid} checkins={checkins} grande={grande} />;
+  return <PlantaHistorica flor={flor} pts={pts} grande={grande} />;
+}
+
+function PlantaHistorica({ flor, pts, grande }) {
   const etapa = etapaPlanta(pts, flor);
-  const escala = useRef(new Animated.Value(etapa.escala)).current;
-  const balanceo = useRef(new Animated.Value(0)).current;
+  const [escala] = useState(() => new Animated.Value(etapa.escala));
+  const [balanceo] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.spring(escala, { toValue: etapa.escala, bounciness: 12, useNativeDriver: true }).start();
-  }, [etapa.escala]);
+  }, [etapa.escala, escala]);
 
   useEffect(() => {
     const anim = Animated.loop(
@@ -22,7 +28,7 @@ export default function Planta({ flor, pts, grande }) {
     );
     anim.start();
     return () => anim.stop();
-  }, []);
+  }, [balanceo]);
 
   const giro = balanceo.interpolate({ inputRange: [-1, 1], outputRange: ['-5deg', '5deg'] });
   const tam = grande ? 88 : 64;

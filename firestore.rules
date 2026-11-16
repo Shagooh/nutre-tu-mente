@@ -19,47 +19,173 @@ service cloud.firestore {
       return v is int && v >= 1 && v <= 5;
     }
     function fechaValida(v) {
-      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      return v is string && v.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && diaExistente(v);
+    }
+    function diaExistente(v) {
+      let partes = v.split('-');
+      let year = int(partes[0]);
+      let month = int(partes[1]);
+      let day = int(partes[2]);
+      let bisiesto = year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+      return day <= (month in [1, 3, 5, 7, 8, 10, 12] ? 31 : month == 2 ? (bisiesto ? 29 : 28) : 30);
+    }
+    function mismoDia(fecha, instante) {
+      let partes = fecha.split('-');
+      return int(partes[0]) == instante.year() && int(partes[1]) == instante.month() && int(partes[2]) == instante.day();
+    }
+    function fechaHistorica(d, anterior) {
+      // La app calcula la zona IANA exacta. Las reglas limitan la adición al
+      // día de Santiago posible con UTC-3/UTC-4; no permiten fechas arbitrarias.
+      return 'confirmadoEn' in anterior
+        ? (mismoDia(d.diaBosque, anterior.confirmadoEn - duration.value(3, 'h'))
+          || mismoDia(d.diaBosque, anterior.confirmadoEn - duration.value(4, 'h')))
+        : d.diaBosque == anterior.fecha;
+    }
+    function horaValida(d) {
+      return !('hora' in d) || (d.hora is string && d.hora.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'));
+    }
+    function calendarioValido(d) {
+      return d.schemaVersion in [1, 2] && fechaValida(d.diaBosque)
+        && (!('instante' in d) || (d.instante is string
+          && d.instante.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9][.][0-9]{3}Z$')
+          && fechaValida(d.instante.split('T')[0])));
+    }
+    function checkinHistorico(d) {
+      return d.schemaVersion == 1
+        && d.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado', 'generacion', 'confirmadoEn', 'schemaVersion', 'diaBosque', 'instante'])
+        && escala(d.animo) && d.necesidades is list && d.necesidades.size() <= 10
+        && d.necesidades.hasOnly(['descanso', 'calma', 'compania', 'moverme', 'agua', 'espacio', 'desahogo', 'comer']);
+    }
+    function checkinEmocional(d) {
+      return d.schemaVersion == 2
+        && d.keys().hasOnly(['id', 'fecha', 'hora', 'emocion', 'intensidad', 'necesidad', 'cuidado', 'actualizado', 'generacion', 'confirmadoEn', 'schemaVersion', 'diaBosque', 'instante'])
+        && d.id is string && d.id.matches('^[A-Za-z0-9_-]{1,128}$')
+        && d.emocion in ['tranquila', 'contenta', 'cansada', 'ansiosa', 'estresada', 'triste', 'enojada', 'aburrida', 'sola', 'no-se']
+        && d.intensidad is int && d.intensidad >= 1 && d.intensidad <= 3
+        && d.necesidad in ['descansar', 'hablar', 'moverme', 'comer', 'momento', 'limite', 'no-se']
+        && 'hora' in d && 'instante' in d;
     }
     function esAhora(d) {
       // Obliga a usar la hora del servidor (serverTimestamp), no una fecha inventada.
       return d.actualizado == request.time;
     }
+    function activo(uid) {
+      return get(/databases/$(database)/documents/syncControls/$(uid)).data.estado == 'activo';
+    }
+    function generacionValida(uid, d) {
+      return activo(uid) && d.generacion == get(/databases/$(database)/documents/syncControls/$(uid)).data.generacion;
+    }
+    function recordatorio(r) {
+      return r is map && r.keys().hasOnly(['id', 'h', 'm', 'activo'])
+        && r.id in ['manana', 'mediodia', 'tarde', 'noche']
+        && r.h is int && r.h >= 0 && r.h <= 23
+        && r.m is int && r.m >= 0 && r.m <= 59 && r.activo is bool;
+    }
+    function recordatorios(rs) {
+      return rs is list && rs.size() <= 4
+        && (rs.size() < 1 || recordatorio(rs[0]))
+        && (rs.size() < 2 || recordatorio(rs[1]))
+        && (rs.size() < 3 || recordatorio(rs[2]))
+        && (rs.size() < 4 || recordatorio(rs[3]));
+    }
+    function opcionalTexto(p, key, max) {
+      return !(key in p) || p[key] == null || texto(p[key], max);
+    }
+    match /syncControls/{uid} {
+      allow read: if esDueno(uid);
+      allow create: if esDueno(uid)
+        && request.resource.data.keys().hasOnly(['estado', 'generacion', 'operacion'])
+        && request.resource.data.estado in ['activo', 'eliminando']
+        && texto(request.resource.data.generacion, 80)
+        && (request.resource.data.operacion == null || texto(request.resource.data.operacion, 80));
+      allow update: if esDueno(uid)
+        && request.resource.data.keys().hasOnly(['estado', 'generacion', 'operacion'])
+        && texto(request.resource.data.generacion, 80)
+        && (request.resource.data.operacion == null || texto(request.resource.data.operacion, 80))
+        && ((resource.data.estado == 'activo' && request.resource.data.estado == 'eliminando' && request.resource.data.generacion == resource.data.generacion)
+          || (resource.data.estado == 'eliminando' && request.resource.data.estado == 'borrado' && request.resource.data.generacion == resource.data.generacion && request.resource.data.operacion == resource.data.operacion)
+          || (resource.data.estado == 'borrado' && request.resource.data.estado == 'activo' && request.resource.data.generacion != resource.data.generacion && request.resource.data.operacion == null));
+      allow delete: if false;
+    }
 
     match /users/{uid} {
-      allow read, delete: if esDueno(uid);
+      allow read: if esDueno(uid);
+      allow delete: if esDueno(uid) && !activo(uid);
       allow create, update: if esDueno(uid)
-        && request.resource.data.keys().hasOnly(['perfil', 'retornos', 'lecciones', 'perfilActualizado', 'actualizado'])
+        && generacionValida(uid, request.resource.data)
+        && request.resource.data.keys().hasOnly(['perfil', 'retornos', 'lecciones', 'perfilActualizado', 'actualizado', 'generacion', 'revision', 'ultimaOperacion'])
+        && (!('ultimaOperacion' in request.resource.data) || request.resource.data.ultimaOperacion == null || texto(request.resource.data.ultimaOperacion, 80))
+        && request.resource.data.revision is int && request.resource.data.revision >= 1
+        && ((!exists(/databases/$(database)/documents/users/$(uid)) || !('revision' in resource.data)) || request.resource.data.revision == resource.data.revision + 1)
         && request.resource.data.perfil is map
         && request.resource.data.perfil.keys().hasOnly(['nombre', 'objetivo', 'momento', 'estilo', 'flor', 'recordatorios', 'consentimiento', 'creado'])
         && texto(request.resource.data.perfil.nombre, 60)
+        && recordatorios(request.resource.data.perfil.recordatorios)
+        && opcionalTexto(request.resource.data.perfil, 'objetivo', 40)
+        && opcionalTexto(request.resource.data.perfil, 'momento', 40)
+        && opcionalTexto(request.resource.data.perfil, 'estilo', 40)
+        && opcionalTexto(request.resource.data.perfil, 'flor', 40)
+        && opcionalTexto(request.resource.data.perfil, 'consentimiento', 10)
+        && opcionalTexto(request.resource.data.perfil, 'creado', 10)
         && request.resource.data.retornos is int
         && request.resource.data.lecciones is list
         && request.resource.data.lecciones.size() <= 50
+        && request.resource.data.lecciones.hasOnly(['hambre-emocional', 'comer-presente', 'sin-juicio', 'hambre-saciedad', 'pausa'])
         && texto(request.resource.data.perfilActualizado, 40)
         && esAhora(request.resource.data);
 
       // Check-ins diarios
+      match /bosque/{id} {
+        allow read: if esDueno(uid);
+        allow create: if esDueno(uid) && id == 'identidad'
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'schemaVersion', 'generacion'])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.id is string
+          && request.resource.data.id.matches('^[A-Za-z0-9-]{1,80}$');
+        allow update: if false;
+        allow delete: if esDueno(uid) && !activo(uid);
+      }
+      match /{col}/{id} {
+        // Solo una migración de metadatos para registros anteriores a generaciones.
+        allow update: if esDueno(uid) && col in ['checkins', 'cuestas', 'mental']
+          && !('generacion' in resource.data)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['generacion']);
+      }
       match /checkins/{id} {
-        allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'animo', 'necesidades', 'cuidado', 'actualizado'])
+        allow read: if esDueno(uid);
+        allow delete: if esDueno(uid) && !activo(uid);
+        // Ampliación única de metadatos: el cuerpo, el ID y los sellos no cambian.
+        allow update: if esDueno(uid) && !('schemaVersion' in resource.data)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['schemaVersion', 'diaBosque', 'generacion'])
+          && request.resource.data.schemaVersion == 1
+          && calendarioValido(request.resource.data)
+          && fechaHistorica(request.resource.data, resource.data);
+        allow create: if esDueno(uid)
+          && generacionValida(uid, request.resource.data)
+          && (checkinHistorico(request.resource.data) || checkinEmocional(request.resource.data))
+          && calendarioValido(request.resource.data)
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
-          && escala(request.resource.data.animo)
-          && request.resource.data.necesidades is list
-          && request.resource.data.necesidades.size() <= 10
+          && horaValida(request.resource.data)
+          && (!('confirmadoEn' in request.resource.data) || request.resource.data.confirmadoEn == request.time)
           && (!('cuidado' in request.resource.data) || texto(request.resource.data.cuidado, 280))
           && esAhora(request.resource.data);
       }
 
       // Usos del botón "Me está costando"
       match /cuestas/{id} {
-        allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'calmaAntes', 'calmaDespues', 'respiro', 'hambre', 'necesidad', 'trato', 'actualizado'])
+        allow read: if esDueno(uid);
+        allow delete: if esDueno(uid) && !activo(uid);
+        allow create: if esDueno(uid)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'hora', 'calmaAntes', 'calmaDespues', 'respiro', 'hambre', 'necesidad', 'trato', 'actualizado', 'generacion'])
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
+          && horaValida(request.resource.data)
           && (!('calmaAntes' in request.resource.data) || escala(request.resource.data.calmaAntes))
           && (!('calmaDespues' in request.resource.data) || escala(request.resource.data.calmaDespues))
           && (!('respiro' in request.resource.data) || request.resource.data.respiro is bool)
@@ -71,9 +197,11 @@ service cloud.firestore {
 
       // Espacio mental (pregunta mensual)
       match /mental/{id} {
-        allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid)
-          && request.resource.data.keys().hasOnly(['id', 'fecha', 'valor', 'actualizado'])
+        allow read: if esDueno(uid);
+        allow delete: if esDueno(uid) && !activo(uid);
+        allow create: if esDueno(uid)
+          && generacionValida(uid, request.resource.data)
+          && request.resource.data.keys().hasOnly(['id', 'fecha', 'valor', 'actualizado', 'generacion'])
           && request.resource.data.id == id
           && fechaValida(request.resource.data.fecha)
           && escala(request.resource.data.valor)

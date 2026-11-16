@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Planta from '../components/Planta';
 import { Boton, Escala, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
-import { cambioCalma, diasDesde, hoyISO, logros, puntos, ultimos7 } from '../logic';
+import { cambioCalma, diasDesde, logros, puntos, ultimos7 } from '../logic';
 import { color } from '../theme';
 import { useState } from 'react';
 
-export default function Progreso({ datos, onEspacioMental }) {
+export default function Progreso({ datos, onEspacioMental, onVolver }) {
   const { perfil } = datos;
   const dias = ultimos7(datos);
   const calma = cambioCalma(datos);
@@ -17,17 +17,18 @@ export default function Progreso({ datos, onEspacioMental }) {
 
   return (
     <Pantalla>
+      {onVolver ? <Boton titulo="Volver a Perfil" variante="texto" onPress={onVolver} /> : null}
       <Titulo>Tu progreso</Titulo>
       <Texto suave style={{ marginBottom: 6 }}>Un recorrido amable, sin números que exigir.</Texto>
 
-      <Planta flor={perfil.flor} pts={puntos(datos)} grande />
+      <Planta bosqueId={datos.bosqueId} uid={datos.cuentaUid} checkins={datos.checkins} flor={perfil.flor} pts={perfil.flor === 'roble' ? undefined : puntos(datos)} grande />
 
       <Tarjeta>
         <Text style={s.etiqueta}>ÚLTIMOS 7 DÍAS · ¿CÓMO ESTUVE?</Text>
         <View style={s.fila}>
           {dias.map((d) => (
             <View key={d.fecha} style={s.dia}>
-              <View style={[s.punto, d.emoji && s.puntoOn]}>
+              <View accessible accessibilityLabel={`${d.fecha} · ${d.descripcion || 'Sin registro'}`} style={[s.punto, d.emoji && s.puntoOn]}>
                 <Text style={{ fontSize: 22 }}>{d.emoji || ''}</Text>
               </View>
               <Text style={s.diaTexto}>{d.etiqueta}</Text>

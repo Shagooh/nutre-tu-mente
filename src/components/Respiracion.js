@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
 import { color } from '../theme';
 
@@ -8,7 +8,12 @@ const CICLO = 10; // 4 s inhalando + 6 s exhalando
 export default function Respiracion({ segundos = 60, onTerminar }) {
   const [activa, setActiva] = useState(false);
   const [t, setT] = useState(0);
-  const escala = useRef(new Animated.Value(1)).current;
+  const [escala] = useState(() => new Animated.Value(1));
+  const finalizado = t >= segundos;
+  const terminar = useEffectEvent(() => {
+    setActiva(false);
+    onTerminar?.();
+  });
 
   const pos = t % CICLO;
   const inhalando = pos < 4;
@@ -21,21 +26,24 @@ export default function Respiracion({ segundos = 60, onTerminar }) {
 
   useEffect(() => {
     if (!activa) return;
-    if (t >= segundos) {
-      setActiva(false);
-      onTerminar && onTerminar();
-      return;
+    if (finalizado) {
+      const cierre = setTimeout(terminar, 0);
+      return () => clearTimeout(cierre);
     }
     try {
       Vibration.vibrate(25);
-    } catch (e) {}
-    Animated.timing(escala, {
+    } catch {
+      // Algunos dispositivos no admiten vibración; la respiración continúa.
+    }
+    const animacion = Animated.timing(escala, {
       toValue: inhalando ? 1.55 : 1,
       duration: inhalando ? 4000 : 6000,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
-    }).start();
-  }, [activa, inhalando, t >= segundos]);
+    });
+    animacion.start();
+    return () => animacion.stop();
+  }, [activa, inhalando, finalizado, escala]);
 
   const restante = Math.max(0, segundos - t);
 

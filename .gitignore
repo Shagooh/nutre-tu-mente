@@ -56,3 +56,5 @@ coverage/
 !.env.example
 
 .env.local
+.tools/
+*-debug.log

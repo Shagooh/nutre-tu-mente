@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_1fotograma" data-name="1fotograma" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #c69c6d;
+        stroke: #1d1d1b;
+        stroke-miterlimit: 10;
+        stroke-width: 3px;
+      }
+    </style>
+  </defs>
+  <path class="cls-1" d="M536.72,1640.21c-6.9,3.05-13.66,7.18-17.71,13.54s-4.68,15.37.19,21.13c5.61,6.61,16.4,6.52,23.8,2s12.1-12.32,16.1-20.01c2.86-5.5,9.43-20.19.98-24.45-5.21-2.63-18.62,5.69-23.36,7.8Z"/>
+</svg>

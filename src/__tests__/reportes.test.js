@@ -1,10 +1,3 @@
-jest.mock('@sentry/react-native', () => ({
-  init: jest.fn(),
-  setTag: jest.fn(),
-  captureException: jest.fn(),
-  withScope: jest.fn((fn) => fn({ setTag: jest.fn() })),
-}));
-
 import * as Sentry from '@sentry/react-native';
 import { version } from '../../package.json';
 import {
@@ -17,6 +10,13 @@ import {
   reportesActivos,
   reportesDisponibles,
 } from '../reportes';
+
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  setTag: jest.fn(),
+  captureException: jest.fn(),
+  withScope: jest.fn((fn) => fn({ setTag: jest.fn() })),
+}));
 
 const DSN = 'https://clave@o0.ingest.example.com/1';
 const PRODUCCION = { dsn: DSN, entorno: 'produccion', dev: false };
@@ -105,22 +105,28 @@ describe('sin datos personales', () => {
     expect(limpio.server_name).toBeUndefined();
     expect(limpio.breadcrumbs).toBeUndefined();
     expect(limpio.extra).toBeUndefined();
-    expect(limpio.contexts.device.name).toBeUndefined();
-    expect(limpio.contexts.device.model).toBe('iPhone 15');
-    expect(limpio.tags).toEqual({ plataforma: 'ios', codigo: 'unavailable' });
+    expect(limpio.contexts).toBeUndefined();
+    expect(limpio.tags).toEqual({ codigo: 'unavailable' });
     const texto = JSON.stringify(limpio);
     expect(texto).not.toMatch(/ana@correo|1\.2\.3\.4|Ana|apodo/);
   });
 
   test('los correos y los identificadores largos de los mensajes se ocultan', () => {
-    expect(limpio.message).toBe('Fallo con [oculto]');
-    expect(limpio.exception.values[0].value).toBe('uid [oculto] no encontrado para [oculto]');
+    expect(limpio.message).toBe('unavailable');
+    expect(limpio.exception.values[0].value).toBe('unavailable');
     expect(limpiarTexto('sin datos')).toBe('sin datos');
     expect(limpiarTexto(undefined)).toBeUndefined();
   });
 
   test('no modifica el evento original', () => {
     expect(evento.user.email).toBe('ana@correo.com');
+  });
+
+  test('texto clínico libre y códigos desconocidos nunca atraviesan el filtro', () => {
+    const privado = 'Mi diario dice que siento culpa después de comer';
+    const r = filtrarEvento({ message: privado, tags: { codigo: privado }, contexts: { nota: privado }, exception: { values: [{ type: privado, value: privado }] } });
+    expect(JSON.stringify(r)).not.toContain(privado);
+    expect(r.message).toBe('desconocido');
   });
 });
 
@@ -153,7 +159,7 @@ describe('consentimiento', () => {
     reportarError({ name: 'FirebaseError', code: 'unavailable', message: 'ana@correo.com' });
     expect(Sentry.captureException).toHaveBeenCalledTimes(1);
     const enviado = Sentry.captureException.mock.calls[0][0];
-    expect(enviado.message).toBe('FirebaseError: unavailable');
+    expect(enviado.message).toBe('unavailable');
     expect(enviado.message).not.toMatch(/ana@/);
   });
 

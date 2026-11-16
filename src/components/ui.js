@@ -2,15 +2,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { color, radio, sombra } from '../theme';
 
-export function Pantalla({ children, scroll = true, style, edges = ['top'] }) {
+export function Pantalla({ children, scroll = true, style, contentStyle, edges = ['top'] }) {
   return (
     <SafeAreaView style={[s.pantalla, style]} edges={edges}>
       {scroll ? (
-        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[s.scroll, contentStyle]} keyboardShouldPersistTaps="handled">
           {children}
         </ScrollView>
       ) : (
-        <View style={s.scroll}>{children}</View>
+        <View style={[s.scroll, contentStyle]}>{children}</View>
       )}
     </SafeAreaView>
   );

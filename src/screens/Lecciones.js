@@ -1,26 +1,21 @@
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Boton, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
 import { LECCIONES, OBJETIVOS } from '../content';
 import { color } from '../theme';
 
-export default function Lecciones({ datos, abrirId, onLeida }) {
-  const [abierta, setAbierta] = useState(abrirId || null);
-
-  useEffect(() => {
-    if (abrirId) setAbierta(abrirId);
-  }, [abrirId]);
+export default function Lecciones({ datos, abrirId, onLeida, onAbrir, onVolver }) {
 
   const objetivo = OBJETIVOS.find((o) => o.id === datos.perfil.objetivo);
   const orden = [...LECCIONES].sort((a, b) => (b.id === objetivo?.leccion) - (a.id === objetivo?.leccion));
 
-  if (abierta) {
-    const l = LECCIONES.find((x) => x.id === abierta);
+  if (abrirId) {
+    const l = LECCIONES.find((x) => x.id === abrirId);
+    if (!l) return <Pantalla edges={['top', 'bottom']}><Titulo>No encontramos esta lección</Titulo><Boton titulo="Volver a Aprende" onPress={onVolver} /></Pantalla>;
     const leida = datos.lecciones.includes(l.id);
     return (
-      <Pantalla>
-        <Pressable onPress={() => setAbierta(null)} accessibilityRole="button" style={{ marginBottom: 12 }}>
-          <Text style={s.volver}>‹ Lecciones</Text>
+      <Pantalla edges={['top', 'bottom']}>
+        <Pressable onPress={onVolver} accessibilityRole="button" style={{ marginBottom: 12 }}>
+          <Text style={s.volver}>‹ Aprende</Text>
         </Pressable>
         <Text style={s.tema}>{l.tema.toUpperCase()} · {l.minutos} MIN</Text>
         <Titulo>{l.titulo}</Titulo>
@@ -44,13 +39,13 @@ export default function Lecciones({ datos, abrirId, onLeida }) {
 
   return (
     <Pantalla>
-      <Titulo>Mini lecciones</Titulo>
+      <Titulo>Aprende</Titulo>
       <Texto suave style={{ marginBottom: 16 }}>¿Qué quieres trabajar hoy? Elige a tu ritmo.</Texto>
       {orden.map((l) => {
         const leida = datos.lecciones.includes(l.id);
         const sugerida = l.id === objetivo?.leccion && !leida;
         return (
-          <Pressable key={l.id} onPress={() => setAbierta(l.id)} accessibilityRole="button">
+          <Pressable key={l.id} onPress={() => onAbrir(l.id)} accessibilityRole="button">
             <Tarjeta tono={sugerida ? 'verde' : undefined}>
               <Text style={s.tema}>{l.tema.toUpperCase()} · {l.minutos} MIN</Text>
               <Texto style={{ fontWeight: '600', fontSize: 17 }}>{l.titulo}</Texto>

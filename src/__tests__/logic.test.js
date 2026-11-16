@@ -1,3 +1,4 @@
+import { relojBosque } from '../reloj-bosque';
 import { ETAPAS, FRASES } from '../content';
 import {
   cambioCalma,
@@ -79,7 +80,7 @@ describe('últimos 7 días', () => {
   test('devuelve 7 días, el último es hoy', () => {
     const dias = ultimos7(vacio());
     expect(dias).toHaveLength(7);
-    expect(dias[6].fecha).toBe(hoyISO());
+    expect(dias[6].fecha).toBe(relojBosque.hoy());
   });
 
   test('los días sin check-in quedan en blanco', () => {
@@ -87,7 +88,7 @@ describe('últimos 7 días', () => {
   });
 
   test('promedia el ánimo de varios check-ins del mismo día', () => {
-    const d = { ...vacio(), checkins: [{ fecha: hoyISO(), animo: 2 }, { fecha: hoyISO(), animo: 4 }] };
+    const d = { ...vacio(), checkins: [{ fecha: relojBosque.hoy(), animo: 2 }, { fecha: relojBosque.hoy(), animo: 4 }] };
     expect(ultimos7(d)[6].animo).toBe(3);
   });
 });
@@ -160,4 +161,14 @@ describe('contenido', () => {
     const todas = Object.values(FRASES).flat();
     todas.forEach((f) => expect(f).not.toMatch(prohibidas));
   });
+});
+
+test('el logro del roble incluye el primer check-in provisional sin exigir cuenta', () => {
+  const d = { ...vacio(), perfil: { flor: 'roble' }, cuentaUid: 'A', checkins: [{ fecha: '2040-01-01' }] };
+  const germino = () => logros(d).find((l) => l.id === 'l7');
+  expect(germino()).toMatchObject({ texto: 'Tu árbol germinó', ok: true });
+  d.cuentaUid = null;
+  expect(germino().ok).toBe(true);
+  d.checkins[0]._confirmadoMs = Date.UTC(2026, 0, 1);
+  expect(germino().ok).toBe(true);
 });
