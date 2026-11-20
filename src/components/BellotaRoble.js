@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import Svg, { Ellipse, Path } from 'react-native-svg';
 import { color } from '../theme';
 
@@ -9,7 +9,8 @@ function BellotaRoble({ size = 184, etiqueta = false }) {
   return (
     <View style={s.caja}>
       <View accessible accessibilityRole="image" accessibilityLabel="Bellota de roble, semilla antes del primer check-in">
-        <Svg width={size} height={size} viewBox="410 725 150 150" accessible={false}>
+        <Svg width={size} height={size} viewBox="410 725 150 150"
+          {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })}>
           <Ellipse cx="489" cy="847" rx="61" ry="8" fill="#526238" opacity={0.16} />
           <Path d="M448 792Q479 778 522 793C529 815 506 839 484 844Q467 846 462 833Q446 822 448 792Z" fill="#d19a61" stroke="#373d2c" strokeWidth={4} />
           <Path d="M456 803Q458 827 476 836" stroke="#f4cc8c" strokeWidth={5} fill="none" strokeLinecap="round" />

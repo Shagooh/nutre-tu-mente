@@ -5,6 +5,7 @@ import { identidadBosqueValida, migrarCalendario } from './contrato-bosque';
 import { diasDesde, hoyISO } from './logic';
 import { crearPersistencia } from './persistencia';
 import { revisionDiagnostico } from './modo-revision';
+import { normalizarTrato } from './trato-personal';
 
 const KEY = 'nutre-tu-mente:v1';
 export const datosVacios = () => ({
@@ -26,6 +27,8 @@ export function prepararDatos(value) {
   if (d.perfil !== null && (typeof d.perfil !== 'object' || !Array.isArray(d.perfil.recordatorios))) throw new Error('storage/invalid');
   // El formato persistido admite perfiles históricos. El perfil V1 solo vive en la revisión.
   if (d.perfil && ('incorporacion' in d.perfil || 'schemaVersion' in d.perfil)) throw new Error('storage/version');
+  d.perfil = normalizarTrato(d.perfil);
+  d.perfilBase = normalizarTrato(d.perfilBase);
   if (d.perfil && !d.cuentaUid && !d.requiereVincular && !d.perfilOperacion) Object.assign(d, tocarPerfil());
   const conIds = asegurarIds(d);
   return { ...conIds, checkins: conIds.checkins.map(migrarCalendario) };

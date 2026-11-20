@@ -5,6 +5,7 @@
 import { randomUUID } from 'expo-crypto';
 import { fusionarPerfil } from './contratos-sync';
 import { migrarCalendario } from './contrato-bosque';
+import { tratoValido } from './trato-personal';
 
 export const COLECCIONES = ['checkins', 'cuestas', 'mental'];
 export const nuevoId = () => randomUUID();
@@ -89,6 +90,10 @@ export function aplicarSync(d, { remoto, subidos, perfilSubido }) {
     salida.perfilBase = remoto.perfil;
     salida.perfilRevision = remoto.revision || 0;
     salida.perfilSucio = Boolean(pendiente);
+    if (tratoValido(d.perfil?.trato) && !tratoValido(salida.perfil.trato)) {
+      salida.perfil = { ...salida.perfil, trato: d.perfil.trato };
+      Object.assign(salida, tocarPerfil());
+    }
   }
   return salida;
 }

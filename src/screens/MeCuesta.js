@@ -1,3 +1,4 @@
+import { useTrato } from '../useTrato';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Respiracion from '../components/Respiracion';
@@ -8,6 +9,7 @@ import { color } from '../theme';
 
 // Flujo: calma antes → respirar → ¿hambre física o emocional? → ¿qué necesito? → ¿cómo me trato? → calma después
 export default function MeCuesta({ onGuardar, onCerrar }) {
+  const t = useTrato();
   const [paso, setPaso] = useState(0);
   const [calmaAntes, setCalmaAntes] = useState(null);
   const [respiro, setRespiro] = useState(false);
@@ -49,7 +51,7 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
         <Text style={s.hero}>🤍</Text>
         <Titulo style={{ textAlign: 'center' }}>Gracias por avisar</Titulo>
         <Texto style={{ marginBottom: 14 }}>
-          Lo que sientes importa, y no tienes que pasarlo sola. Si sientes que esto te supera, si los atracones se
+          {t('Lo que sientes importa, y no tienes que pasarlo sola.')}  Si sientes que esto te supera, si los atracones se
           repiten con frecuencia o estás en una crisis emocional, hablar con un profesional puede ayudarte mucho.
         </Texto>
         <Tarjeta tono="verde">
@@ -58,7 +60,7 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
             llama a los servicios de emergencia de tu país.
           </Texto>
         </Tarjeta>
-        <Texto suave style={{ marginBottom: 20 }}>Nutre tu mente no reemplaza la atención profesional.</Texto>
+        <Texto suave style={{ marginBottom: 20 }}>Amía no reemplaza la atención profesional.</Texto>
         <Boton titulo="Volver" onPress={() => setApoyo(false)} />
       </Pantalla>
     );
@@ -119,7 +121,7 @@ export default function MeCuesta({ onGuardar, onCerrar }) {
         {accion ? (
           <Tarjeta tono="verde">
             <Texto style={{ fontWeight: '600', marginBottom: 4 }}>Una pequeña acción</Texto>
-            <Texto>{accion.accion}</Texto>
+            <Texto>{t(accion.accion)}</Texto>
           </Tarjeta>
         ) : null}
       </>

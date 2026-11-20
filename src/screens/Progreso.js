@@ -1,3 +1,4 @@
+import { useTrato } from '../useTrato';
 import { StyleSheet, Text, View } from 'react-native';
 import Planta from '../components/Planta';
 import { Boton, Escala, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
@@ -6,6 +7,7 @@ import { color } from '../theme';
 import { useState } from 'react';
 
 export default function Progreso({ datos, onEspacioMental, onVolver }) {
+  const t = useTrato(datos.perfil);
   const { perfil } = datos;
   const dias = ultimos7(datos);
   const calma = cambioCalma(datos);
@@ -28,7 +30,7 @@ export default function Progreso({ datos, onEspacioMental, onVolver }) {
         <View style={s.fila}>
           {dias.map((d) => (
             <View key={d.fecha} style={s.dia}>
-              <View accessible accessibilityLabel={`${d.fecha} · ${d.descripcion || 'Sin registro'}`} style={[s.punto, d.emoji && s.puntoOn]}>
+              <View accessible accessibilityLabel={`${d.fecha} · ${t(d.descripcion) || 'Sin registro'}`} style={[s.punto, d.emoji && s.puntoOn]}>
                 <Text style={{ fontSize: 22 }}>{d.emoji || ''}</Text>
               </View>
               <Text style={s.diaTexto}>{d.etiqueta}</Text>

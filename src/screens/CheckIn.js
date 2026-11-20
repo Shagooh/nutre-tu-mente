@@ -1,3 +1,4 @@
+import { useTrato } from '../useTrato';
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Boton, Chip, Pantalla, Texto, Titulo } from '../components/ui';
@@ -9,6 +10,7 @@ import { color } from '../theme';
 import CuidadoCheckin from '../components/CuidadoCheckin';
 
 export default function CheckIn({ onGuardar, onCerrar, onAbrirCuidado }) {
+  const t = useTrato();
   const [emocion, setEmocion] = useState(null);
   const [intensidad, setIntensidad] = useState(null);
   const [necesidad, setNecesidad] = useState(null);
@@ -60,11 +62,11 @@ export default function CheckIn({ onGuardar, onCerrar, onAbrirCuidado }) {
         <Texto style={s.pregunta}>¿Cómo estoy?</Texto>
         <View style={s.emociones}>
           {EMOCIONES_CHECKIN.map((e) => (
-            <Pressable key={e.id} accessibilityRole="radio" accessibilityLabel={e.texto}
+            <Pressable key={e.id} accessibilityRole="radio" accessibilityLabel={t(e.texto)}
               accessibilityState={{ checked: emocion === e.id, disabled: guardando }} disabled={guardando}
               onPress={() => setEmocion(e.id)} style={[s.emocion, emocion === e.id && s.elegida]}>
               <Text style={{ fontSize: 28 }}>{e.icono}</Text>
-              <Text style={s.etiqueta}>{e.texto}</Text>
+              <Text style={s.etiqueta}>{t(e.texto)}</Text>
             </Pressable>
           ))}
         </View>

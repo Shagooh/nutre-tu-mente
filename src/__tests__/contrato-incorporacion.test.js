@@ -1,3 +1,4 @@
+import { cambiarTrato } from '../trato-personal';
 import { DIAGNOSTICO, PREFERENCIAS } from '../content/incorporacion';
 import { arbolMensualValido, crearPerfilRevision, incorporacionValida, perfilDiagnostico } from '../contrato-incorporacion';
 import { prepararDatos, useStore } from '../store';
@@ -13,6 +14,8 @@ test('la sesión de revisión nunca lee ni modifica el almacenamiento, incluso d
   const sesion = renderHook(useStore);
   await waitFor(() => expect(sesion.result.current.datos).toBeTruthy());
   await act(async () => { await sesion.result.current.actualizar(() => ({ perfil: { nombre: 'Sol', recordatorios: [] } })); });
+  await act(async () => { await sesion.result.current.actualizar(d => ({ perfil: cambiarTrato(d.perfil, { trato: 'neutro' }) })); });
+  expect(sesion.result.current.datos.perfil.trato).toBe('neutro');
   expect(sesion.result.current.datos.perfil.nombre).toBe('Sol');
   sesion.unmount();
   const nueva = renderHook(useStore);

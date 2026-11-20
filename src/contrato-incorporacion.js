@@ -1,3 +1,4 @@
+import { tratoValido } from './trato-personal';
 import { DIAGNOSTICO, PREFERENCIAS } from './content/incorporacion';
 
 const exclusivas = { 'diag-2': 'ninguna', 'diag-3': 'nada', 'diag-11': 'nada', 'diag-12': 'ninguna' };
@@ -26,7 +27,7 @@ function respuestasValidas(respuestas, preguntas) {
   return preguntas.every(p => {
     if (!Object.hasOwn(respuestas, p.id)) return false;
     const valor = respuestas[p.id];
-    if (valor === null) return p.omisible || p.tipo.includes('opcional');
+    if (valor === null) return p.id === 'pref-1' || p.omisible || p.tipo.includes('opcional');
     return Array.isArray(valor) && valor.length > 0 && valor.length <= maximo(p)
       && new Set(valor).size === valor.length
       && valor.every(id => p.opciones.some(o => o.id === id))
@@ -54,6 +55,7 @@ export function crearPerfilRevision(nombre, incorporacion) {
   if (typeof nombre !== 'string' || !nombre.trim() || nombre.trim().length > 30
     || !incorporacionValida(incorporacion) || incorporacion.diagnostico['diag-12'][0] !== 'ninguna'
     || incorporacion.preferencias['pref-2'][0] === 'menor-18') throw new Error('revision/incompleta');
-  return { schemaVersion: 1, nombre: nombre.trim(), incorporacion, flor: 'roble',
+  const trato = incorporacion.preferencias['pref-1']?.[0];
+  return { ...(tratoValido(trato) ? { trato } : {}), schemaVersion: 1, nombre: nombre.trim(), incorporacion, flor: 'roble',
     estilo: incorporacion.preferencias['pref-4'][0], recordatorios: [] };
 }

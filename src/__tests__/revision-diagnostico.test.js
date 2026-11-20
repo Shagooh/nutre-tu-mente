@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import RevisionDiagnostico from '../screens/RevisionDiagnostico';
+import { textoConTrato } from '../texto-trato';
 import { DIAGNOSTICO, PREFERENCIAS } from '../content/incorporacion';
 
 const pulsar = texto => fireEvent.press(screen.getByText(texto));
 const continuar = () => pulsar('Continuar');
-const opcion = (numero, indice) => DIAGNOSTICO.preguntas[numero - 1].opciones[indice].texto;
+const opcion = (numero, indice) => textoConTrato(DIAGNOSTICO.preguntas[numero - 1].opciones[indice].texto);
 
 test('revisa las doce preguntas, omite, vuelve, limita selecciones y detiene salidas pendientes', () => {
   const terminar = jest.fn();
@@ -47,8 +48,6 @@ test('revisa las doce preguntas, omite, vuelve, limita selecciones y detiene sal
   continuar();
   expect(screen.getByText('Conciencia')).toBeTruthy();
   pulsar('Empezar');
-  pulsar(PREFERENCIAS.preguntas[0].opciones[2].texto);
-  continuar();
   pulsar('Menos de 18');
   continuar();
   expect(screen.getByText('Orientación para menores pendiente de revisión clínica')).toBeTruthy();

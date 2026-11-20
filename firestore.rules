@@ -119,7 +119,9 @@ service cloud.firestore {
         && request.resource.data.revision is int && request.resource.data.revision >= 1
         && ((!exists(/databases/$(database)/documents/users/$(uid)) || !('revision' in resource.data)) || request.resource.data.revision == resource.data.revision + 1)
         && request.resource.data.perfil is map
-        && request.resource.data.perfil.keys().hasOnly(['nombre', 'objetivo', 'momento', 'estilo', 'flor', 'recordatorios', 'consentimiento', 'creado'])
+        && request.resource.data.perfil.keys().hasOnly(['nombre', 'objetivo', 'momento', 'estilo', 'flor', 'recordatorios', 'consentimiento', 'creado', 'trato'])
+        && (!('trato' in request.resource.data.perfil) || request.resource.data.perfil.trato in ['masculino', 'femenino', 'neutro'])
+        && (!exists(/databases/$(database)/documents/users/$(uid)) || !('trato' in resource.data.perfil) || 'trato' in request.resource.data.perfil)
         && texto(request.resource.data.perfil.nombre, 60)
         && recordatorios(request.resource.data.perfil.recordatorios)
         && opcionalTexto(request.resource.data.perfil, 'objetivo', 40)
