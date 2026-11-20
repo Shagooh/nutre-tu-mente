@@ -1,3 +1,4 @@
+import { useTrato } from '../useTrato';
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { perfilDiagnostico, seleccionarRespuesta } from '../contrato-incorporacion';
@@ -12,12 +13,13 @@ for (const pregunta of DIAGNOSTICO.preguntas) {
   pasos.push(pregunta.id);
   if (DIAGNOSTICO.validaciones[pregunta.id]) pasos.push('tras-' + pregunta.id);
 }
-pasos.push('nombre', 'resultado', ...PREFERENCIAS.preguntas.map(p => p.id), 'fin');
+pasos.push('nombre', 'resultado', ...PREFERENCIAS.preguntas.filter(p => p.id !== 'pref-1').map(p => p.id), 'fin');
 
 // La ruta de desarrollo inyecta una sesión aislada hasta la revisión de 5.1.
-export default function RevisionDiagnostico({ onTerminar }) {
+export default function RevisionDiagnostico({ onTerminar, tratoInicial = null }) {
   const [indice, ir] = useState(0);
-  const [respuestas, responder] = useState({});
+  const [respuestas, responder] = useState({ 'pref-1': tratoInicial ? [tratoInicial] : null });
+  const t = useTrato({ trato: respuestas['pref-1']?.[0] });
   const [bloqueo, bloquear] = useState('');
   const [nombre, nombrar] = useState('');
   const [error, mostrarError] = useState('');
@@ -26,7 +28,7 @@ export default function RevisionDiagnostico({ onTerminar }) {
   const seleccion = respuestas[paso] ?? [];
   const avanzar = () => ir(indice + 1);
   const guardar = valor => responder(prev => ({ ...prev, [paso]: valor }));
-  const reiniciar = () => { responder({}); nombrar(''); mostrarError(''); bloquear(''); ir(0); };
+  const reiniciar = () => { responder({ 'pref-1': tratoInicial ? [tratoInicial] : null }); nombrar(''); mostrarError(''); bloquear(''); ir(0); };
   const terminar = async () => {
     const recoger = catalogo => Object.fromEntries(catalogo.preguntas.map(p => [p.id, respuestas[p.id]]));
     try {
@@ -58,7 +60,7 @@ export default function RevisionDiagnostico({ onTerminar }) {
       <Barra paso={numero} total={total} />
       <Titulo>{pregunta.texto}</Titulo>
       <Texto suave>{pregunta.tipo}</Texto>
-      {pregunta.opciones.map(o => <Opcion key={o.id} titulo={o.texto} activo={seleccion.includes(o.id)}
+      {pregunta.opciones.map(o => <Opcion key={o.id} titulo={t(o.texto)} activo={seleccion.includes(o.id)}
         onPress={() => responder(prev => ({ ...prev, [paso]: seleccionarRespuesta(pregunta, prev[paso] ?? [], o.id) }))} />)}
       <Boton titulo="Continuar" disabled={!seleccion.length} onPress={continuar} />
       {(pregunta.omisible || pregunta.tipo.includes('opcional')) &&

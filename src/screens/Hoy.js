@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { useTrato } from '../useTrato';
+import { Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
+import LogoAmia from '../components/LogoAmia';
 import { relojBosque } from '../reloj-bosque';
 import { diaDelBosque } from '../contrato-bosque';
 import Planta from '../components/Planta';
@@ -8,6 +10,9 @@ import { cuestasUltimaSemana, fraseDelDia, puntos, saludo } from '../logic';
 import { color } from '../theme';
 
 export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve, onAbrir, onIrALecciones }) {
+  const t = useTrato(datos.perfil);
+  const { fontScale, width } = useWindowDimensions();
+  const diametroAyuda = Math.min(Math.max(160, 160 * fontScale), Math.max(160, width - 40));
   const { perfil } = datos;
   const hoy = relojBosque.hoy();
   const hechoHoy = datos.checkins.some((c) => diaDelBosque(c) === hoy);
@@ -18,6 +23,7 @@ export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve
 
   return (
     <Pantalla>
+      <LogoAmia size={112} />
       <Text style={s.saludo}>{saludo()}, {perfil.nombre}</Text>
 
       {vuelve ? (
@@ -38,8 +44,9 @@ export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve
       <Planta bosqueId={datos.bosqueId} uid={datos.cuentaUid} checkins={datos.checkins} flor={perfil.flor} pts={perfil.flor === 'roble' ? undefined : puntos(datos)} grande />
       {perfil.flor === 'roble' ? <Boton titulo="Mi bosque" variante="suave" onPress={() => onAbrir('bosque')} /> : null}
 
-      <Boton titulo="Me está costando" variante="acento" onPress={() => onAbrir('cuesta')} style={s.grande} />
-      <Texto suave style={s.nota}>Respiramos juntas, sin juicio.</Texto>
+      <Boton titulo="Me está costando" variante="acento" onPress={() => onAbrir('cuesta')}
+        style={[s.grande, { width: diametroAyuda, height: diametroAyuda }]} />
+      <Texto suave style={s.nota}>{t('Respiramos juntas, sin juicio.')}</Texto>
 
       <Tarjeta style={{ marginTop: 14 }}>
         <Text style={s.etiqueta}>CHECK-IN</Text>
@@ -87,7 +94,7 @@ export default function Hoy({ datos, vuelve, nubeActiva, usuario, onCerrarVuelve
         </Tarjeta>
       ) : null}
 
-      <Texto suave style={s.aviso}>Nutre tu mente no reemplaza la atención profesional.</Texto>
+      <Texto suave style={s.aviso}>Amía no reemplaza la atención profesional.</Texto>
     </Pantalla>
   );
 }
@@ -96,7 +103,7 @@ const s = StyleSheet.create({
   saludo: { fontSize: 26, fontWeight: '700', color: color.texto, marginBottom: 14 },
   etiqueta: { fontSize: 12, letterSpacing: 1, color: color.suave, fontWeight: '600', marginBottom: 8 },
   frase: { fontSize: 20, lineHeight: 28, color: color.texto, fontStyle: 'italic' },
-  grande: { paddingVertical: 20 },
+  grande: { alignSelf: 'center', borderRadius: 999, padding: 24, marginTop: 20 },
   nota: { textAlign: 'center', marginTop: 6, fontSize: 14 },
   cerrar: { marginTop: 8, color: color.primario, fontWeight: '600', fontSize: 15 },
   aviso: { textAlign: 'center', fontSize: 13, marginTop: 10 },

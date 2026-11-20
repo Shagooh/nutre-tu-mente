@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import SelectorTrato from '../components/SelectorTrato';
+import { useTrato } from '../useTrato';
 import BellotaRoble from '../components/BellotaRoble';
+import LogoAmia from '../components/LogoAmia';
 import RevisionDiagnostico from './RevisionDiagnostico';
 import { Barra, Boton, Escala, Opcion, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
 import { ESTILOS, MOMENTOS, OBJETIVOS, SLOTS } from '../content';
@@ -8,13 +11,15 @@ import { BIENVENIDA } from '../content/bienvenida';
 import { fraseDelDia, horaTexto, hoyISO } from '../logic';
 import { color } from '../theme';
 
-const TOTAL = 9;
+const TOTAL = 10;
 
 export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva, onTengoCuenta }) {
   const [paso, setPaso] = useState(0);
   const [intro, setIntro] = useState(0);
   const [enBienvenida, setEnBienvenida] = useState(true);
   const [acepto, setAcepto] = useState(false);
+  const [trato, setTrato] = useState(null);
+  const t = useTrato({ trato });
   const [nombre, setNombre] = useState('');
   const [objetivo, setObjetivo] = useState(null);
   const [momento, setMomento] = useState(null);
@@ -50,6 +55,7 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
     try {
       await onTerminar(
       {
+        ...(trato ? { trato } : {}),
         nombre: nombre.trim() || 'tú',
         objetivo,
         momento,
@@ -72,16 +78,15 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
 
   let contenido;
   let puedeSeguir = true;
-  if (onTerminarRevision && !enBienvenida && paso === 1 && acepto) {
-    return <RevisionDiagnostico onTerminar={onTerminarRevision} />;
+  if (onTerminarRevision && !enBienvenida && paso === 2 && acepto) {
+    return <RevisionDiagnostico onTerminar={onTerminarRevision} tratoInicial={trato} />;
   }
 
   if (enBienvenida) {
     const pagina = BIENVENIDA.pantallas[intro];
     contenido = (
       <>
-        <Text style={s.marca}>NUTRIMIND</Text>
-        <View style={s.semilla}><BellotaRoble size={intro === 3 ? 116 : 178} /></View>
+        <LogoAmia />
         <Texto suave style={s.contador}>{intro + 1} de {BIENVENIDA.pantallas.length}</Texto>
         <Titulo>{pagina.titulo}</Titulo>
         {pagina.texto ? <Texto style={{ marginTop: 12 }}>{pagina.texto}</Texto> : null}
@@ -112,8 +117,8 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
         </Tarjeta>
         <Texto suave style={{ marginBottom: 14 }}>
           {onTerminarRevision ? 'Revisión con datos ficticios. Tus respuestas se conservan en memoria hasta que recargues la app.' : nubeActiva
-            ? 'Por defecto guardamos todo solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. Si más adelante creas una cuenta (es opcional), también guardaremos una copia en la nube de Google (Firebase) para que no la pierdas. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'
-            : 'Guardamos solo en tu teléfono: tu apodo, tus respuestas, tus check-ins y tus horarios. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'}
+            ? 'Por defecto guardamos todo solo en tu teléfono: tu apodo, tus respuestas, tus check-ins, tus horarios y tu preferencia de trato. Si más adelante creas una cuenta (es opcional), también guardaremos una copia en la nube de Google (Firebase) para que no la pierdas. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'
+            : 'Guardamos solo en tu teléfono: tu apodo, tus respuestas, tus check-ins, tus horarios y tu preferencia de trato. No guardamos peso, medidas, fotos ni calorías. Puedes borrar todo cuando quieras desde Ajustes.'}
         </Texto>
         <Pressable style={s.consentimiento} onPress={() => setAcepto(!acepto)} accessibilityRole="checkbox" accessibilityState={{ checked: acepto }}>
           <View style={[s.caja, acepto && s.cajaOn]}>{acepto ? <Text style={s.tic}>✓</Text> : null}</View>
@@ -122,6 +127,8 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
       </>
     );
   } else if (paso === 1) {
+    contenido = <SelectorTrato valor={trato} onCambio={setTrato} />;
+  } else if (paso === 2) {
     contenido = (
       <>
         <Titulo>¿Cómo quieres que te llamemos?</Titulo>
@@ -138,18 +145,18 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
         />
       </>
     );
-  } else if (paso === 2) {
+  } else if (paso === 3) {
     puedeSeguir = !!objetivo;
     contenido = (
       <>
         <Titulo>¿Qué te gustaría lograr?</Titulo>
         <Texto suave style={{ marginBottom: 14 }}>Elige lo que más resuena hoy.</Texto>
         {OBJETIVOS.map((o) => (
-          <Opcion key={o.id} titulo={o.texto} activo={objetivo === o.id} onPress={() => setObjetivo(o.id)} />
+          <Opcion key={o.id} titulo={t(o.texto)} activo={objetivo === o.id} onPress={() => setObjetivo(o.id)} />
         ))}
       </>
     );
-  } else if (paso === 3) {
+  } else if (paso === 4) {
     puedeSeguir = !!momento;
     contenido = (
       <>
@@ -160,7 +167,7 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
         ))}
       </>
     );
-  } else if (paso === 4) {
+  } else if (paso === 5) {
     contenido = (
       <>
         <Titulo>¿Quieres recordatorios?</Titulo>
@@ -182,7 +189,7 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
         <Texto suave style={{ fontSize: 14 }}>Puedes cambiar los horarios después, en Ajustes.</Texto>
       </>
     );
-  } else if (paso === 5) {
+  } else if (paso === 6) {
     contenido = (
       <>
         <Titulo>¿Qué frases prefieres?</Titulo>
@@ -192,7 +199,7 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
         ))}
       </>
     );
-  } else if (paso === 6) {
+  } else if (paso === 7) {
     puedeSeguir = !!espacio;
     contenido = (
       <>
@@ -204,7 +211,7 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
         </Texto>
       </>
     );
-  } else if (paso === 7) {
+  } else if (paso === 8) {
     contenido = (
       <>
         <Texto suave style={s.contador}>TU ÁRBOL</Texto>
@@ -223,7 +230,7 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
     contenido = (
       <>
         <View style={s.semilla}><BellotaRoble size={210} /></View>
-        <Titulo>Listo, {nombre.trim() || 'tú'}.</Titulo>
+        <Titulo>{t('Listo')}, {nombre.trim() || 'tú'}.</Titulo>
         <Texto style={{ marginTop: 12 }}>Tu roble empieza con una bellota.</Texto>
         <Texto suave style={{ marginTop: 12 }}>No necesitas venir todos los días: cada hoja cuenta.</Texto>
       </>
@@ -271,7 +278,6 @@ export default function Onboarding({ onTerminar, onTerminarRevision, nubeActiva,
 
 const s = StyleSheet.create({
   pantalla: { flex: 1, paddingBottom: 12 },
-  marca: { fontSize: 12, letterSpacing: 3, color: color.primario, fontWeight: '700', textAlign: 'center', marginTop: 10 },
   semilla: { alignSelf: 'center', backgroundColor: color.primarioClaro, borderRadius: 140, marginVertical: 18 },
   contador: { color: color.primario, fontSize: 13, letterSpacing: 1, marginBottom: 12 },
   borrador: { fontSize: 13, lineHeight: 20, marginTop: 20 },

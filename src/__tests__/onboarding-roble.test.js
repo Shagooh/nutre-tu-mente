@@ -27,9 +27,11 @@ async function aceptar(tree) {
   await act(async () => tree.root.findAllByProps({ accessibilityRole: 'checkbox' })[0].props.onPress());
   await pulsar(tree, 'Acepto y continúo');
 }
-async function hastaBellota(tree) {
+async function hastaBellota(tree, trato) {
   await pulsar(tree, 'Saltar bienvenida');
   await aceptar(tree);
+  if (trato) await act(async () => tree.root.findAllByProps({ accessibilityRole: 'radio', accessibilityLabel: trato })[0].props.onPress());
+  await pulsar(tree); // trato opcional
   await act(async () => tree.root.findByType(TextInput).props.onChangeText('  Ana  '));
   await pulsar(tree); // nombre
   await act(async () => tree.root.findAllByType(Opcion)[0].props.onPress());
@@ -115,5 +117,17 @@ test('Ajustes conserva el roble sin ofrecer flores y mantiene las elecciones ant
   await act(async () => tree.update(<Ajustes {...props} perfil={{ ...props.perfil, flor: 'rosa' }} />));
   expect(texto(tree)).toContain('MI FLOR');
   expect(texto(tree)).toContain('Rosa');
+  await act(async () => tree.unmount());
+});
+
+
+test.each([['Él', 'masculino'], ['Ella', 'femenino'], ['Neutro', 'neutro'], [null, undefined]])('finaliza y guarda trato opcional %s', async (etiqueta, trato) => {
+  const guardar = jest.fn(async () => {});
+  const tree = await montar({ onTerminar: guardar });
+  await hastaBellota(tree, etiqueta);
+  await pulsar(tree);
+  await pulsar(tree, 'Empezar');
+  expect(guardar.mock.calls[0][0].trato).toBe(trato);
+  if (!etiqueta) expect(guardar.mock.calls[0][0]).not.toHaveProperty('trato');
   await act(async () => tree.unmount());
 });

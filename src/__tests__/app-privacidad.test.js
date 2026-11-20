@@ -2,6 +2,7 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import * as Sentry from '@sentry/react-native';
 import { iniciarReportes, detenerReportes } from '../reportes';
+import { programarRecordatorios } from '../notifications';
 
 let mockDatos = null;
 jest.mock('../store', () => ({ useStore: () => ({ datos: mockDatos, actualizar: jest.fn(), reintentar: jest.fn() }) }));
@@ -26,6 +27,11 @@ test('importar App no inicia Sentry y renderizar respeta consentimiento/borrado'
   expect(iniciarReportes).not.toHaveBeenCalled();
   mockDatos = { perfil: { consentimiento: '2026-11-07', nombre: 'A', recordatorios: [] }, checkins: [], cuestas: [], lecciones: [] };
   await act(async () => { tree.update(<App />); });
+  expect(iniciarReportes).toHaveBeenCalledTimes(1);
+  programarRecordatorios.mockClear();
+  mockDatos = { ...mockDatos, perfil: { ...mockDatos.perfil, trato: 'masculino' } };
+  await act(async () => { tree.update(<App />); });
+  expect(programarRecordatorios).not.toHaveBeenCalled();
   expect(iniciarReportes).toHaveBeenCalledTimes(1);
   mockDatos = { perfil: null };
   await act(async () => { tree.update(<App />); });

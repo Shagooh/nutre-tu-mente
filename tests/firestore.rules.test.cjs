@@ -17,6 +17,27 @@ const registro = (d) => doc(d, 'users/A/checkins/id1');
 const activo = { estado: 'activo', generacion: 'g1', operacion: null };
 const checkin = () => ({ id: 'id1', fecha: '2026-11-07', diaBosque: '2026-11-07', schemaVersion: 1, instante: '2026-11-07T13:00:00.000Z', hora: '10:00', animo: 3, necesidades: [], cuidado: '', generacion: 'g1', actualizado: serverTimestamp() });
 
+test('trato opcional: enum, omisión protegida, aislamiento y borrado', async () => {
+  const a = db('A');
+  await setDoc(control(a), activo);
+  const ref = doc(a, 'users/A');
+  const perfil = { nombre: 'A', recordatorios: [] };
+  const documento = { perfil, retornos: 0, lecciones: [], perfilActualizado: '2026-11-20', revision: 1, generacion: 'g1', actualizado: serverTimestamp() };
+  await assertSucceeds(setDoc(ref, documento));
+  let revision = 1;
+  for (const trato of ['femenino', 'masculino', 'neutro']) {
+    await assertSucceeds(setDoc(ref, { ...documento, revision: ++revision, perfil: { ...perfil, trato } }));
+  }
+  for (const trato of ['otro', null, 2, {}, ['neutro']]) {
+    await assertFails(setDoc(ref, { ...documento, revision: revision + 1, perfil: { ...perfil, trato } }));
+  }
+  await assertFails(setDoc(ref, { ...documento, revision: revision + 1 }));
+  await assertFails(setDoc(doc(db('B'), 'users/A'), { ...documento, revision: revision + 1, perfil: { ...perfil, trato: 'masculino' } }));
+  assert.equal((await getDoc(ref)).data().perfil.trato, 'neutro');
+  await updateDoc(control(a), { estado: 'eliminando', operacion: 'borrar-trato' });
+  await assertSucceeds(deleteDoc(ref));
+});
+
 test('propietaria permitida; B y anónimo no leen ni escriben A', async () => {
   const a = db('A');
   await assertSucceeds(setDoc(control(a), activo));

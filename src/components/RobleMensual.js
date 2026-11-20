@@ -1,3 +1,4 @@
+import { useTrato } from '../useTrato';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { AppState, Pressable, Text, View } from 'react-native';
 import Svg, { G, Path, Ellipse, Text as SvgText } from 'react-native-svg';
@@ -21,6 +22,7 @@ const elementos = { Svg, Group: Grupo, Path, Ellipse, Title: () => null };
 const vacios = [];
 
 function RobleMensual({ bosqueId, checkins = vacios, grande, archivo = false, onAbrirCuidado }) {
+  const t = useTrato();
   const [hoy, setHoy] = useState(() => relojBosque.hoy());
   const [consultando, setConsultando] = useState(archivo);
   const [mesElegido, setMesElegido] = useState(null);
@@ -47,9 +49,9 @@ function RobleMensual({ bosqueId, checkins = vacios, grande, archivo = false, on
       {roble?.dias ? <View style={{ alignSelf: 'stretch', marginTop: 10 }}>
         <Text style={{ color: color.suave, marginBottom: 6 }}>Colores e iconos provisionales</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {EMOCIONES_CHECKIN.map((e) => <View key={e.id} accessible accessibilityLabel={`${e.texto} · ${e.color}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 4 }}>
+          {EMOCIONES_CHECKIN.map((e) => <View key={e.id} accessible accessibilityLabel={`${t(e.texto)} · ${e.color}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 4 }}>
             <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: color.suave, backgroundColor: emotionalPalettes[e.id].base }} />
-            <Text style={{ color: color.texto, fontSize: 14 }}>{e.icono} {e.texto}</Text>
+            <Text style={{ color: color.texto, fontSize: 14 }}>{e.icono} {t(e.texto)}</Text>
           </View>)}
         </View>
       </View> : null}
@@ -60,7 +62,7 @@ function RobleMensual({ bosqueId, checkins = vacios, grande, archivo = false, on
         {roble?.resumen.length ? <View style={{ marginBottom: 12 }}>
           <Text accessibilityRole="header" style={{ color: color.texto, fontSize: 18 }}>Emociones de {mes}</Text>
           {roble.resumen.map((r) => <Text key={r.emocion} style={{ color: color.texto, fontSize: 16 }}>
-            {EMOCIONES_CHECKIN.find((e) => e.id === r.emocion).icono} {EMOCIONES_CHECKIN.find((e) => e.id === r.emocion).texto} · {r.dias} {r.dias === 1 ? 'día' : 'días'}
+            {EMOCIONES_CHECKIN.find((e) => e.id === r.emocion).icono} {t(EMOCIONES_CHECKIN.find((e) => e.id === r.emocion).texto)} · {r.dias} {r.dias === 1 ? 'día' : 'días'}
           </Text>)}
         </View> : <Text style={{ color: color.texto, marginBottom: 12 }}>Este mes aún no tiene emociones registradas. Los registros históricos conservan su ánimo original.</Text>}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -70,12 +72,12 @@ function RobleMensual({ bosqueId, checkins = vacios, grande, archivo = false, on
           const e = EMOCIONES_CHECKIN.find((item) => item.id === h.emocion);
           const abierto = hoja?.fecha === h.fecha;
           return <View key={h.fecha}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`${h.fecha} · ${e?.texto || 'Registro histórico'} · ${h.provisional ? 'Fecha provisional' : 'Fecha confirmada'} · ${h.sincronizada ? 'Sincronizado' : 'Solo en este teléfono'}`}
+            <Pressable accessibilityRole="button" accessibilityLabel={`${h.fecha} · ${t(e?.texto) || 'Registro histórico'} · ${h.provisional ? 'Fecha provisional' : 'Fecha confirmada'} · ${h.sincronizada ? 'Sincronizado' : 'Solo en este teléfono'}`}
               accessibilityState={{ expanded: abierto, selected: abierto }}
               accessibilityHint="Muestra el registro de este día debajo del botón."
               onPress={() => setFechaElegida(abierto ? null : h.fecha)}
               style={{ minHeight: 48, padding: 14, marginVertical: 4, borderRadius: 14, borderWidth: abierto ? 2 : 1, borderColor: color.primario, backgroundColor: color.primarioClaro }}>
-              <Text style={{ color: color.texto, fontSize: 16 }}>{h.fecha} · {e ? e.icono + ' ' + e.texto : 'Registro histórico'}</Text>
+              <Text style={{ color: color.texto, fontSize: 16 }}>{h.fecha} · {e ? e.icono + ' ' + t(e.texto) : 'Registro histórico'}</Text>
               <Text style={{ color: color.texto }}>{h.provisional ? 'Fecha provisional' : 'Fecha confirmada'} · {h.sincronizada ? 'Sincronizado' : 'Solo en este teléfono'}</Text>
             </Pressable>
             {abierto ? <DetalleHoja hoja={h} registros={checkins.filter((c) => diaDelBosque(c) === h.fecha)} onAbrirCuidado={onAbrirCuidado} /> : null}
@@ -87,13 +89,14 @@ function RobleMensual({ bosqueId, checkins = vacios, grande, archivo = false, on
 }
 
 function DetalleHoja({ hoja, registros, onAbrirCuidado }) {
+  const t = useTrato();
   const elegido = registros.find((c) => c.id === hoja.registroId);
   const emocion = EMOCIONES_CHECKIN.find((e) => e.id === hoja.emocion);
   return <View style={{ paddingVertical: 16, gap: 8 }}>
     <View accessible accessibilityLiveRegion="polite" style={{ gap: 8 }}>
       <Text accessibilityRole="header" style={{ color: color.texto, fontSize: 18 }}>Registro de {hoja.fecha}</Text>
       {elegido ? <>
-        <Text style={{ color: color.texto }}>Emoción: {emocion?.texto} · Intensidad: {INTENSIDADES_CHECKIN.find((i) => i.valor === hoja.intensidad)?.texto}</Text>
+        <Text style={{ color: color.texto }}>Emoción: {t(emocion?.texto)} · Intensidad: {INTENSIDADES_CHECKIN.find((i) => i.valor === hoja.intensidad)?.texto}</Text>
         <Text style={{ color: color.texto }}>Necesidad: {NECESIDADES_CHECKIN.find((n) => n.id === hoja.necesidad)?.texto}</Text>
         {elegido.cuidado ? <Text style={{ color: color.texto }}>Cuidado que escribiste: {elegido.cuidado}</Text> : null}
       </> : registros.map((c) => <View key={c.id}>

@@ -224,7 +224,7 @@ export default function Cuenta({ usuario, estadoSync, conflicto, onCerrar, onSal
         </View>
 
         <Texto suave style={s.legal}>
-          Guardamos solo lo que anotas en la app (sin peso, calorías ni fotos). Nutre tu mente no reemplaza la
+          Guardamos solo lo que anotas en la app (sin peso, calorías ni fotos). Amía no reemplaza la
           atención de un profesional.
         </Texto>
       </KeyboardAvoidingView>

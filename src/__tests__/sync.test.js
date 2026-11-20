@@ -48,6 +48,20 @@ beforeEach(() => {
   relojBosque.ajustar(Date.UTC(2026, 10, 11, 12));
 });
 const datos = () => ({ ...datosVacios(), cuentaUid: 'A', nubeGeneracion: 'g1', checkins: [{ id: 'id1', fecha: '2026-11-07', animo: 3 }] });
+
+test('trato offline se fusiona con perfil antiguo, reintenta y se recupera sin mezclar cuentas', async () => {
+  const base = { nombre: 'A', recordatorios: [] };
+  mockDocs.set('users/A', { perfil: { ...base, nombre: 'Nuevo' }, revision: 1, lecciones: [], retornos: 0 });
+  const d = { ...datos(), perfilBase: base, perfil: { ...base, trato: 'masculino' }, perfilSucio: true, perfilActualizado: 'T', perfilOperacion: 'trato-op' };
+  const respuesta = await sincronizar('A', d);
+  expect(respuesta.remoto.perfil).toEqual({ ...base, nombre: 'Nuevo', trato: 'masculino' });
+  expect((await sincronizar('A', d)).remoto.revision).toBe(2);
+  const otroDispositivo = { ...datos(), checkins: [], perfil: null };
+  expect(aplicarSync(otroDispositivo, respuesta).perfil.trato).toBe('masculino');
+  await expect(sincronizar('B', d)).rejects.toThrow('sync/session-required');
+  await borrarNube('A', { id: 'borrar-trato', generacion: 'g1' });
+  expect(mockDocs.has('users/A')).toBe(false);
+});
 test('respuesta perdida se reintenta con mismo ID y timestamp, sin duplicar', async () => {
   mockPerderRespuesta = true;
   await expect(sincronizar('A', datos())).rejects.toThrow('respuesta perdida');

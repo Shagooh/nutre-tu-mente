@@ -65,6 +65,8 @@ test('la revisión integrada exige consentimiento, usa el apodo y abre las pesta
   expect(screen.getByRole('button', { name: 'Acepto y continúo' })).toBeDisabled();
   fireEvent.press(screen.getByRole('checkbox'));
   tocar('Acepto y continúo');
+  fireEvent.press(screen.getByRole('radio', { name: 'Neutro' }));
+  tocar('Continuar');
   tocar('Probar con datos ficticios');
   for (let n = 1; n <= 11; n++) {
     if (n === 10) {
@@ -79,7 +81,7 @@ test('la revisión integrada exige consentimiento, usa el apodo y abre las pesta
   tocar('Continuar');
   expect(screen.getByText(/^Luz, te haces cargo/)).toBeTruthy();
   tocar('Empezar');
-  for (const respuesta of ['Neutro ("te sientes con cansancio")', '25–34', null,
+  for (const respuesta of ['25–34', null,
     'Afirmaciones ("Mi cuerpo no define mi valor.")', 'Textos cortos', '1 minuto', null]) {
     if (respuesta) { tocar(respuesta); tocar('Continuar'); } else tocar('Saltar');
   }
@@ -104,12 +106,12 @@ test('Inicio → Mi bosque → hoja → respiración vuelve al mismo mes y detal
   expect(screen).toHavePathname('/bosque');
   expect(screen.getByText('Este mes aún no tiene registros.')).toBeTruthy();
   fireEvent.press(screen.getByText('2026-11'));
-  const hoja = () => screen.getByRole('button', { name: /2026-11-30 · Ansiosa/ });
+  const hoja = () => screen.getByRole('button', { name: /2026-11-30 · Con ansiedad/ });
   expect(hoja().props.accessibilityState.expanded).toBe(false);
   fireEvent.press(hoja());
   expect(hoja().props.accessibilityState).toMatchObject({ selected: true, expanded: true });
   expect(screen.getByText('Cuidado que escribiste: Mi cuidado de ese día')).toBeTruthy();
-  expect(screen.getByText('Emoción: Ansiosa · Intensidad: mucho')).toBeTruthy();
+  expect(screen.getByText('Emoción: Con ansiedad · Intensidad: mucho')).toBeTruthy();
   expect(screen.getByText('Necesidad: No sé')).toBeTruthy();
   fireEvent.press(screen.getByText('Respira 1 minuto'));
   expect(screen).toHavePathname('/respira');
@@ -134,14 +136,14 @@ test('Mi bosque conserva meses al reabrir, resume tres emociones ganadoras y sep
   ];
   renderRouter(rutas, { initialUrl: '/bosque' });
   fireEvent.press(screen.getByText('2026-12'));
-  expect(screen.getByText('☀️ Contenta · 2 días')).toBeTruthy();
+  expect(screen.getByText('☀️ Con alegría · 2 días')).toBeTruthy();
   expect(screen.getByText('💧 Triste · 2 días')).toBeTruthy();
-  expect(screen.getByText('🌀 Ansiosa · 1 día')).toBeTruthy();
-  expect(screen.queryByText('🫂 Sola · 1 día')).toBeNull();
+  expect(screen.getByText('🌀 Con ansiedad · 1 día')).toBeTruthy();
+  expect(screen.queryByText('🫂 Con soledad · 1 día')).toBeNull();
   expect(screen.getByLabelText('Roble · 2026-12 · 6 días registrados')).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: /2026-12-31 · Sola/ }));
-  expect(screen.getByText('Emoción: Sola · Intensidad: mucho')).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: /2026-12-30 · Ansiosa/ }));
+  fireEvent.press(screen.getByRole('button', { name: /2026-12-31 · Con soledad/ }));
+  expect(screen.getByText('Emoción: Con soledad · Intensidad: mucho')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: /2026-12-30 · Con ansiedad/ }));
   expect(screen.getByText('Registro de 2026-12-30')).toBeTruthy();
   expect(screen.queryByText('Registro de 2026-12-31')).toBeNull();
   act(() => router.replace('/'));
@@ -166,7 +168,7 @@ test('el cuidado de una hoja aplica apoyo mucho sin anunciar la secuencia o el a
   jest.spyOn(relojBosque, 'hoy').mockReturnValue('2026-11-14');
   mockDatos.checkins = [emocional('2026-11-13', 'ansiosa', { necesidad: 'comer' })];
   renderRouter(rutas, { initialUrl: '/bosque' });
-  fireEvent.press(screen.getByRole('button', { name: /2026-11-13 · Ansiosa/ }));
+  fireEvent.press(screen.getByRole('button', { name: /2026-11-13 · Con ansiedad/ }));
   expect(screen.queryByText('Respira 1 minuto')).toBeNull();
   expect(screen.queryByText(/Primero respiremos/)).toBeNull();
   expect(screen.queryByText(/audio de relajación/)).toBeNull();
@@ -195,7 +197,7 @@ test('cambiar de almacenamiento descarta el mes y la hoja de la cuenta anterior'
   mockDatos.checkins = [emocional('2026-11-30')];
   renderRouter(rutas, { initialUrl: '/bosque' });
   fireEvent.press(screen.getByText('2026-11'));
-  fireEvent.press(screen.getByRole('button', { name: /2026-11-30 · Ansiosa/ }));
+  fireEvent.press(screen.getByRole('button', { name: /2026-11-30 · Con ansiedad/ }));
   act(() => mockSetDatos({ ...mockDatos, bosqueId: 'otro-bosque', checkins: [] }));
   expect(screen.queryByText('2026-11')).toBeNull();
   expect(screen.queryByText('Registro de 2026-11-30')).toBeNull();

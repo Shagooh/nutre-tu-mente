@@ -45,7 +45,7 @@ test('después de guardar ofrece ayuda para intensidad mucho y conserva el cierr
   const abrir = jest.fn();
   let vista;
   await act(async () => { vista = create(<CheckIn onGuardar={jest.fn(async () => {})} onCerrar={jest.fn()} onAbrirCuidado={abrir} />); });
-  await act(async () => vista.root.findByProps({ accessibilityLabel: 'Ansiosa' }).props.onPress());
+  await act(async () => vista.root.findByProps({ accessibilityLabel: 'Con ansiedad' }).props.onPress());
   for (const texto of ['mucho', 'Comer']) {
     await act(async () => vista.root.findAllByType(Chip).find((c) => c.props.texto === texto).props.onPress());
   }

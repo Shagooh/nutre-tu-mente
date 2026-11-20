@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import SelectorTrato from '../components/SelectorTrato';
+import { tratoElegido, OPCIONES_TRATO } from '../trato-personal';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Boton, Chip, Pantalla, Tarjeta, Texto, Titulo } from '../components/ui';
 import { ESTILOS, FLORES, SLOTS } from '../content';
@@ -16,6 +18,22 @@ export default function Ajustes({
   onBorrar,
   onVerProgreso,
 }) {
+  const [borradorTrato, setBorradorTrato] = useState(null);
+  const [guardandoTrato, setGuardandoTrato] = useState(false);
+  const [avisoTrato, setAvisoTrato] = useState('');
+  const ocupadoTrato = useRef(false);
+  const guardadoTrato = tratoElegido(perfil);
+  const trato = borradorTrato ?? guardadoTrato;
+  const guardarTrato = async () => {
+    if (ocupadoTrato.current || !trato) return;
+    ocupadoTrato.current = true; setGuardandoTrato(true); setAvisoTrato('');
+    try {
+      await onCambiarPerfil({ trato });
+      setBorradorTrato(null); setAvisoTrato('Preferencia guardada.');
+    } catch {
+      setAvisoTrato('No pudimos guardar. Tu preferencia anterior se conserva. Puedes reintentar.');
+    } finally { ocupadoTrato.current = false; setGuardandoTrato(false); }
+  };
   const [confirmar, setConfirmar] = useState(false);
   const [errorBorrar, setErrorBorrar] = useState('');
 
@@ -37,6 +55,14 @@ export default function Ajustes({
       <Titulo>Perfil</Titulo>
       {onVerProgreso ? <Boton titulo="Mi progreso" variante="suave" onPress={onVerProgreso} /> : null}
       <Texto suave style={{ marginBottom: 16 }}>Hola, {perfil.nombre}. Aquí decides cómo te acompañamos.</Texto>
+
+      <Tarjeta>
+        <SelectorTrato valor={trato} onCambio={(valor) => { setBorradorTrato(valor); setAvisoTrato(''); }} disabled={guardandoTrato} />
+        <Texto suave style={{ marginTop: 10 }}>Guardado: {OPCIONES_TRATO.find((o) => o.id === guardadoTrato)?.texto || 'Sin elegir · usamos lenguaje neutro'}</Texto>
+        <Boton titulo={guardandoTrato ? 'Guardando…' : 'Guardar cambios'} onPress={guardarTrato}
+          disabled={guardandoTrato || !trato || trato === guardadoTrato} style={{ marginTop: 12 }} />
+        {avisoTrato ? <Texto accessibilityRole="alert">{avisoTrato}</Texto> : null}
+      </Tarjeta>
 
       {nubeActiva ? (
         <Tarjeta>
@@ -149,7 +175,7 @@ export default function Ajustes({
       </Tarjeta>
 
       <Texto suave style={s.aviso}>
-        Nutre tu mente no diagnostica ni reemplaza la atención de un profesional. Si estás en crisis, contacta a un
+        Amía no diagnostica ni reemplaza la atención de un profesional. Si estás en crisis, contacta a un
         profesional de salud o a los servicios de emergencia de tu país.
       </Texto>
     </Pantalla>

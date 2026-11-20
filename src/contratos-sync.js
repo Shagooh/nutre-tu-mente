@@ -1,3 +1,5 @@
+import { tratoValido } from './trato-personal';
+
 export const conflicto = (code = 'sync/conflict') => Object.assign(new Error(code), { code });
 export function canonico(value) {
   if (Array.isArray(value)) return `[${value.map(canonico).join(',')}]`;
@@ -15,6 +17,17 @@ export function fusionarPerfil(base, local, remoto) {
   }
   const salida = { ...remoto };
   for (const key of new Set([...Object.keys(base), ...Object.keys(local), ...Object.keys(remoto)])) {
+    // La ausencia histórica no expresa una decisión de borrar esta preferencia.
+    if (key === 'trato') {
+      const anterior = tratoValido(base.trato) ? base.trato : undefined;
+      const propio = tratoValido(local.trato) ? local.trato : anterior;
+      const ajeno = tratoValido(remoto.trato) ? remoto.trato : anterior;
+      if (propio !== anterior && ajeno !== anterior && propio !== ajeno) throw conflicto('sync/profile-conflict');
+      const elegido = propio !== anterior ? propio : ajeno;
+      if (elegido) salida.trato = elegido;
+      else delete salida.trato;
+      continue;
+    }
     const cambiaLocal = !iguales(base[key], local[key]);
     const cambiaRemoto = !iguales(base[key], remoto[key]);
     if (cambiaLocal && cambiaRemoto && !iguales(local[key], remoto[key])) throw conflicto('sync/profile-conflict');

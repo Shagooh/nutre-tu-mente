@@ -144,7 +144,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  botonTexto: { fontSize: 16, fontWeight: '600' },
+  botonTexto: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
   chip: {
     borderRadius: 999,
     borderWidth: 1,

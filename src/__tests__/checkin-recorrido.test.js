@@ -31,7 +31,7 @@ test('el formulario exige los tres campos, guarda una sola necesidad y no anunci
   expect(boton().props.disabled).toBe(true);
   await act(async () => boton().props.onPress());
   expect(guardar).not.toHaveBeenCalled();
-  await act(async () => vista.root.findByProps({ accessibilityLabel: 'Ansiosa' }).props.onPress());
+  await act(async () => vista.root.findByProps({ accessibilityLabel: 'Con ansiedad' }).props.onPress());
   expect(boton().props.disabled).toBe(true);
   await elegir('mucho');
   expect(boton().props.disabled).toBe(true);
@@ -107,8 +107,8 @@ test('tocar hoja muestra intensidad, necesidad y cuidado; leyenda y resumen no d
   await act(async () => vista.root.findAllByType(Chip).find((b) => b.props.texto === '2026-11').props.onPress());
   await act(async () => vista.root.findAllByProps({ accessibilityRole: 'button' }).find((b) => b.props.accessibilityLabel?.startsWith('2026-11-13')).props.onPress());
   const texto = JSON.stringify(vista.toJSON());
-  for (const valor of ['Ansiosa', 'mucho', 'Comer', 'Mi cuidado', 'Colores e iconos provisionales', 'Emociones de ']) expect(texto).toContain(valor);
-  expect(vista.root.findAllByProps({ accessibilityLabel: 'Ansiosa · Naranjo' }).length).toBeGreaterThan(0);
+  for (const valor of ['Con ansiedad', 'mucho', 'Comer', 'Mi cuidado', 'Colores e iconos provisionales', 'Emociones de ']) expect(texto).toContain(valor);
+  expect(vista.root.findAllByProps({ accessibilityLabel: 'Con ansiedad · Naranjo' }).length).toBeGreaterThan(0);
   await act(async () => vista.unmount());
 });
 

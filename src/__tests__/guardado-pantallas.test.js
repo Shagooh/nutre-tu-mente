@@ -12,7 +12,7 @@ test('check-in espera disco; un rechazo conserva formulario y permite reintentar
   const guardar = jest.fn(() => new Promise((_, reject) => { rechazar = reject; }));
   let tree;
   await act(async () => { tree = create(<CheckIn onGuardar={guardar} onCerrar={jest.fn()} />); });
-  await act(async () => { tree.root.findAllByProps({ accessibilityLabel: 'Tranquila' })[0].props.onPress(); });
+  await act(async () => { tree.root.findAllByProps({ accessibilityLabel: 'En calma' })[0].props.onPress(); });
   await act(async () => tree.root.findAllByType(Chip).find((c) => c.props.texto === 'poco').props.onPress());
   await act(async () => tree.root.findAllByType(Chip).find((c) => c.props.texto === 'Descansar').props.onPress());
   let promesa;
